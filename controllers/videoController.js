@@ -83,3 +83,21 @@ export const getVideosByAccountId = async (req, res) => {
     }
 }
 
+//get all videos
+export const getAllVideos = async (req, res) => 
+{
+    try 
+    {
+        const videos = await videoModel.find();
+
+        res.status(200).send({
+            message: "Videos retrieved successfully",
+            videos,
+        });
+    } 
+    catch (error) 
+    {
+        res.status(500).json({ message: error.message });
+    }
+}
+

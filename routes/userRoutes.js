@@ -1,4 +1,14 @@
 import { Router } from "express";
-// import { userController } from "../controllers/userController.js";
+import 
+{ 
+    userSignup,
+    userLogin
+} from "../controllers/userController.js";
 
 export const userRoutes = Router();
+
+// User Signup
+userRoutes.post("/signup", userSignup);
+
+// User Login
+userRoutes.post("/login", userLogin);
