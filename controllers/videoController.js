@@ -5,9 +5,9 @@ export const saveNewVideo = async (req, res) =>
 {
     try {
 
-        const { accountId, title, embeddedLink, shareableLink } = req.body;
+        const { accountId, title, embeddedLink, shareableLink, description } = req.body;
 
-        const video = await videoModel.create({ accountId, title, embeddedLink, shareableLink });
+        const video = await videoModel.create({ accountId, title, embeddedLink, shareableLink, description });
 
         return res.status(201).send({
             message: "Video saved successfully",
@@ -26,7 +26,7 @@ export const updateVideo = async (req, res) =>
     try {
         const { accountId, title, embeddedLink, shareableLink, videoId } = req.body;
 
-        const video = await videoModel.findByIdAndUpdate(videoId, { accountId, title, embeddedLink, shareableLink }, { new: true });
+        const video = await videoModel.findByIdAndUpdate(videoId, { accountId, title, embeddedLink, shareableLink, description }, { new: true });
 
         if (!video) {
             return res.status(404).send({
