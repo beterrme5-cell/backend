@@ -5,7 +5,8 @@ import
     updateVideo,
     deleteVideo,
     getVideosByAccountId,
-    getAllVideos
+    getAllVideos,
+    getVideoById
 } 
 from "../controllers/videoController.js";
 
@@ -28,3 +29,6 @@ videoRoutes.get("/getVideosByAccountId/:id", authenticateToken, getVideosByAccou
 
 //Get all videos
 videoRoutes.get("/getAllVideos", authenticateToken, getAllVideos);
+
+//Get video by id
+videoRoutes.get("/getVideoById/:id", authenticateToken, getVideoById);
