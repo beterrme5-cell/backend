@@ -4,6 +4,8 @@ import express from "express";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+const MAX_RETRIES = 5; // Maximum number of retries
+const RETRY_DELAY = 5000; // Delay between retries in milliseconds (5 seconds)
 
 // Importing the routes
 import { userRoutes } from "./routes/userRoutes.js";
@@ -45,13 +47,32 @@ app.use(
 app.use("/api/user", userRoutes);
 app.use("/api/video", videoRoutes);
 
-// Connecting to the database and starting the server
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => {
-    console.log("Connected to MongoDB!");
-    app.listen(process.env.PORT, () => {
-      console.log(`Server is running on port ${process.env.PORT}`);
+
+let retryCount = 0;
+
+const connectWithRetry = () => {
+  mongoose
+    .connect(process.env.MONGO_URL)
+    .then(() => {
+      console.log("Connected to MongoDB!");
+      // Start the server only after successful DB connection
+      app.listen(process.env.PORT, () => {
+        console.log(`Server is running on port ${process.env.PORT}`);
+      });
+    })
+    .catch((err) => {
+      retryCount += 1;
+      console.log(`Failed to connect to MongoDB (Attempt ${retryCount}/${MAX_RETRIES}):`, err);
+
+      if (retryCount < MAX_RETRIES) {
+        console.log(`Retrying connection in ${RETRY_DELAY / 1000} seconds...`);
+        setTimeout(connectWithRetry, RETRY_DELAY);
+      } else {
+        console.error("Max retries reached. Exiting...");
+        process.exit(1); // Exit the process if retries are exhausted
+      }
     });
-  })
-  .catch((err) => console.log("Failed to connect to MongoDB:", err));
+};
+
+// Initial connection attempt
+connectWithRetry();
