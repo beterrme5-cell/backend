@@ -16,19 +16,19 @@ import { authenticateToken } from "../middlewares/authenticateToken.js";
 export const videoRoutes = Router();
 
 //Save a new video
-videoRoutes.post("/saveNewVideo", authenticateToken, saveNewVideo);
+videoRoutes.post("/saveNewVideo", saveNewVideo);
 
 //Update a video
-videoRoutes.put("/updateVideo", authenticateToken, updateVideo);
+videoRoutes.put("/updateVideo", updateVideo);
 
 //Delete a video
-videoRoutes.delete("/deleteVideo/:id", authenticateToken, deleteVideo);
+videoRoutes.delete("/deleteVideo/:id", deleteVideo);
 
 //Get all videos by account id
-videoRoutes.get("/getVideosByAccountId/:id", authenticateToken, getVideosByAccountId);
+videoRoutes.get("/getVideosByAccountId/:id", getVideosByAccountId);
 
 //Get all videos
-videoRoutes.get("/getAllVideos", authenticateToken, getAllVideos);
+videoRoutes.get("/getAllVideos", getAllVideos);
 
 //Get video by id
-videoRoutes.get("/getVideoById/:id", authenticateToken, getVideoById);
+videoRoutes.get("/getVideoById/:id", getVideoById);
