@@ -22,7 +22,7 @@ videoRoutes.post("/saveNewVideo", saveNewVideo);
 videoRoutes.put("/updateVideo", updateVideo);
 
 //Delete a video
-videoRoutes.delete("/deleteVideo/:id", deleteVideo);
+videoRoutes.delete("/deleteVideo/:accountId/:videoId", deleteVideo);
 
 //Get all videos by account id
 videoRoutes.get("/getVideosByAccountId/:id", getVideosByAccountId);

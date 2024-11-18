@@ -16,7 +16,7 @@ export const saveNewVideo = async (req, res) =>
     } 
     catch (error) 
     {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
 };
 
@@ -40,7 +40,7 @@ export const updateVideo = async (req, res) =>
         });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
 }
 
@@ -48,11 +48,19 @@ export const updateVideo = async (req, res) =>
 export const deleteVideo = async (req, res) =>
 {
     try {
-        const { id } = req.params;
-        const video = await videoModel.findByIdAndDelete(id);
+        const { accountId, videoId } = req.params;
+
+        //Check if account id matches video account id
+        const videoData = await videoModel.findById(videoId);
+        if (videoData.accountId !== accountId) {
+            return res.status(400).send({
+                message: "You are not authorized to delete this video",
+            });
+        }
+        const video = await videoModel.findByIdAndDelete(videoId);
 
         if (!video) {
-            return res.status(404).send({
+            return res.status(400).send({
                 message: "Video not found",
             });
         }
@@ -62,7 +70,7 @@ export const deleteVideo = async (req, res) =>
         });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
     
 }
@@ -79,7 +87,7 @@ export const getVideosByAccountId = async (req, res) => {
         })
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
 }
 
@@ -101,7 +109,7 @@ export const getVideoById = async (req, res) => {
         });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
 }
 
@@ -119,7 +127,7 @@ export const getAllVideos = async (req, res) =>
     } 
     catch (error) 
     {
-        res.status(500).json({ message: error.message });
+        res.status(400).json({ message: error.message });
     }
 }
 
