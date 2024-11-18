@@ -24,9 +24,9 @@ export const saveNewVideo = async (req, res) =>
 export const updateVideo = async (req, res) =>
 {
     try {
-        const { accountId, title, embeddedLink, shareableLink, videoId, description } = req.body;
+        const { accountId, title, videoId, description } = req.body;
 
-        const video = await videoModel.findByIdAndUpdate(videoId, { accountId, title, embeddedLink, shareableLink, description }, { new: true });
+        const video = await videoModel.findByIdAndUpdate(videoId, { accountId, title, description }, { new: true });
 
         if (!video) {
             return res.status(404).send({
