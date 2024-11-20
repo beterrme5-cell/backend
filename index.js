@@ -60,6 +60,7 @@ app.use(cors(corsOptions));
 // Using the routes
 app.use("/oauth/callback", callback);
 app.use("/api/user", userRoutes);
+app.use("/init", initiate)
 app.use("/api/video", videoRoutes);
 
 // Generate JWT for Loom SDK
