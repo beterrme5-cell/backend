@@ -5,13 +5,16 @@ import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import { importPKCS8, SignJWT } from "jose";
 import fs from "fs";
-
+// Configuring the environment variables
+dotenv.config();
 import cors from "cors";
 const PORT = process.env.PORT;
 
 // Importing the routes
 import { userRoutes } from "./routes/userRoutes.js";
 import { videoRoutes } from "./routes/videoRoutes.js";
+import { initiate } from "./GHL/initiate.js";
+import { callback } from "./GHL/callback.js";
 
 const MAX_RETRIES = 5; // Maximum number of retries
 const RETRY_DELAY = 5000; // Delay between retries in milliseconds (5 seconds)
@@ -23,9 +26,6 @@ const PRIVATE_PEM = fs.readFileSync(
 );
 // const PUBLIC_APP_ID = "d5dfdcdb-3445-443a-9fca-a61b0161a9ae"; // Public APP ID For Custom SDK
 const PUBLIC_APP_ID = "06dbde78-c4db-449e-b09a-52a2e27aeeba"; // Public APP ID For Standard SDK
-
-// Configuring the environment variables
-dotenv.config();
 
 // Creating the express app
 const app = express();
@@ -42,7 +42,11 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     // Allow any subdomain of .monday.app
-    if (origin.endsWith(":5173") || allowedOrigins.includes(origin)) {
+    if (
+      origin.endsWith(":5173") ||
+      origin.endsWith("ngrok-free.app") ||
+      allowedOrigins.includes(origin)
+    ) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -54,8 +58,28 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Using the routes
+app.use("/oauth/callback", callback);
 app.use("/api/user", userRoutes);
+app.use("/init", initiate)
 app.use("/api/video", videoRoutes);
+
+// Generate JWT for Loom SDK
+app.get("/get-loom-token", async (req, res) => {
+  try {
+    const privateKey = await importPKCS8(PRIVATE_PEM, "RS256");
+    const token = await new SignJWT({})
+      .setProtectedHeader({ alg: "RS256" })
+      .setIssuedAt()
+      .setIssuer(PUBLIC_APP_ID)
+      .setExpirationTime("2m") // Token expires in 2 minutes
+      .sign(privateKey);
+
+    res.json({ token });
+  } catch (error) {
+    console.error("Error generating JWT:", error);
+    res.status(500).json({ error: "Failed to generate token" });
+  }
+});
 
 let retryCount = 0;
 
@@ -88,25 +112,3 @@ const connectWithRetry = () => {
 
 // // Initial connection attempt
 connectWithRetry();
-
-// Generate JWT for Loom SDK
-app.get("/get-loom-token", async (req, res) => {
-  try {
-    const privateKey = await importPKCS8(PRIVATE_PEM, "RS256");
-    const token = await new SignJWT({})
-      .setProtectedHeader({ alg: "RS256" })
-      .setIssuedAt()
-      .setIssuer(PUBLIC_APP_ID)
-      .setExpirationTime("2m") // Token expires in 2 minutes
-      .sign(privateKey);
-
-    res.json({ token });
-  } catch (error) {
-    console.error("Error generating JWT:", error);
-    res.status(500).json({ error: "Failed to generate token" });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
