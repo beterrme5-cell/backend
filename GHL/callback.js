@@ -56,6 +56,7 @@ export const callback = async (req, res) => {
       { new: true, upsert: true } // Upsert option added
     );
 
+    return res.redirect("https://app.gohighlevel.com/");
     //search for contacts
 
     // const options = {
