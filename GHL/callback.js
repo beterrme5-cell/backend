@@ -1,19 +1,15 @@
 import axios from "axios";
 import dotenv from "dotenv";
 import qs from "qs";
+import userModel from "../models/userModel.js";
 
 // Configuring the environment variables
 dotenv.config();
 
 export const callback = async (req, res) => {
   try {
-    const body = {
-      code: req.query.code,
-      client_id: process.env.GHL_CLIENT_ID,
-      client_secret: process.env.GHL_CLIENT_SECRET,
-      grant_type: "authorization_code",
-      user_type: "Location",
-    };
+
+    console.log ("CODE", req.query.code);
 
     const response = await axios.post(
       "https://services.leadconnectorhq.com/oauth/token",
@@ -22,7 +18,6 @@ export const callback = async (req, res) => {
         client_id: process.env.GHL_CLIENT_ID,
         client_secret: process.env.GHL_CLIENT_SECRET,
         grant_type: "authorization_code",
-        user_type: "Location",
       }),
       {
         headers: {
@@ -31,14 +26,57 @@ export const callback = async (req, res) => {
       }
     );
 
-    return res.json({
-      message: "Successfully received the token",
-      data: response.data,
-    });
+    // console.log("Response", response.data);
+
+    const locationId = response.data.locationId ? response.data.locationId : "";
+    const userId  = response.data.userId;
+    const access_token = response.data.access_token;
+    const refresh_token = response.data.refresh_token;
+    const expires_in = response.data.expires_in;
+    const scope = response.data.scope;
+    const companyId = response.data.companyId;
+
+    var expiryDate = new Date();
+    expiryDate.setSeconds(expiryDate.getSeconds() + (expires_in - 60));
+
+    await userModel.findOneAndUpdate(
+      { accountId: userId, userlocationId: locationId },
+      {
+        $set: {
+          accountId: userId,
+          userlocationId: locationId,
+          access_token: access_token,
+          refresh_token: refresh_token,
+          expiryDate: expiryDate,
+          scope: scope,
+          companyId: companyId,
+          userCode: req.query.code
+        },
+      },
+      { new: true, upsert: true } // Upsert option added
+    );
+
+    //search for contacts
+
+    // const options = {
+    //   method: 'POST',
+    //   url: 'https://services.leadconnectorhq.com/contacts/search',
+    //   headers: {
+    //     Authorization: `Bearer ${response.data.access_token}`,
+    //     Version: process.env.GHL_API_VERSION,
+    //     'Content-Type': 'application/json',
+    //     Accept: 'application/json'
+    //   },
+    //   data: {
+    //     locationId: response.data.locationId,
+    //     page: 1,
+    //     pageLimit: 10
+    //   }
+    // };
+    
+    // const { data } = await axios.request(options);
+    // console.log(data);
   } catch (error) {
     console.error("Error during API call:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
   }
 };

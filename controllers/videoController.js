@@ -1,13 +1,20 @@
 import videoModel from "../models/videoModel.js";
+import userModel from "../models/userModel.js";
 
 // Save a new video
 export const saveNewVideo = async (req, res) => 
 {
     try {
 
-        const { accountId, title, embeddedLink, shareableLink } = req.body;
+        const { title, embeddedLink, shareableLink, user } = req.body;
 
-        const video = await videoModel.create({ accountId, title, embeddedLink, shareableLink, description: "" });
+        const userData = await userModel.findOne({ accountId: user.accountId, userlocationId: user.userlocationId });
+        if (!userData) {
+            return res.status(400).send({
+                message: "User not found",
+            });
+        }
+        const video = await videoModel.create({ creator: userData._id, title, embeddedLink, shareableLink, description: "" });
 
         return res.status(201).send({
             message: "Video saved successfully",
@@ -24,9 +31,9 @@ export const saveNewVideo = async (req, res) =>
 export const updateVideo = async (req, res) =>
 {
     try {
-        const { accountId, title, videoId, description } = req.body;
+        const { title, videoId, description } = req.body;
 
-        const video = await videoModel.findByIdAndUpdate(videoId, { accountId, title, description }, { new: true });
+        const video = await videoModel.findByIdAndUpdate(videoId, { title, description }, { new: true });
 
         if (!video) {
             return res.status(404).send({
@@ -48,11 +55,17 @@ export const updateVideo = async (req, res) =>
 export const deleteVideo = async (req, res) =>
 {
     try {
-        const { accountId, videoId } = req.params;
+        const { videoId, user } = req.params;
 
-        //Check if account id matches video account id
+        const userData = await userModel.findOne({ accountId: user.accountId, userlocationId: user.userlocationId });
+        if (!userData) {
+            return res.status(400).send({
+                message: "User not found",
+            });
+        }
+
         const videoData = await videoModel.findById(videoId);
-        if (videoData.accountId !== accountId) {
+        if (videoData.creator.toString() !== userData._id.toString()) {
             return res.status(400).send({
                 message: "You are not authorized to delete this video",
             });

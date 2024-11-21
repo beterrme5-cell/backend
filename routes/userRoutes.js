@@ -1,14 +1,10 @@
 import { Router } from "express";
 import 
 { 
-    userSignup,
-    userLogin
+    decryptUserToken
 } from "../controllers/userController.js";
 
 export const userRoutes = Router();
 
-// User Signup
-userRoutes.post("/signup", userSignup);
-
-// User Login
-userRoutes.post("/login", userLogin);
+//Get User Data from GHL Key
+userRoutes.post("/decryptUserToken", decryptUserToken);

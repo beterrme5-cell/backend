@@ -1,54 +1,48 @@
 import userModel from "../models/userModel.js";
 import { generateToken } from "../services/auth.js";
 import { sanitizeUser } from "../services/sanitization.js";
+import CryptoJS from "crypto-js";
 
-export const userSignup = async (req, res) => {
-    try {
-
-        const { accountId, name, email, password } = req.body;
-
-        const newUser = await userModel.create({
-            accountId,
-            name,
-            email,
-            password,
-        });
-
-        const token = generateToken(newUser);
-
-        res.status(201).send({
-            message: "User created successfully",
-            token,
-        })
-
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-export const userLogin = async (req, res) => 
+export const decryptUserToken = async (req, res) =>
 {
     try
     {
-        const { email, password } = req.body;
+        const { token } = req.body;
+        const ssoDecryptionKey = process.env.SSO_DECRYPTION_KEY;
 
-        const data = await userModel.matchPasswordAndGenerateToken(
-            email,
-            password,
-        );
-      
-        const { user, accessToken } = data;
+        var decryptedData = CryptoJS.AES.decrypt(token, ssoDecryptionKey).toString(CryptoJS.enc.Utf8);
+        decryptedData = JSON.parse(decryptedData);
 
-        //remove password and salt from user
-        const sanitizedUser = sanitizeUser(user);
+        if (decryptedData.userId)
+        {
+            const user = await userModel.findOne({ accountId: decryptedData.userId, userlocationId: (decryptedData.activeLocation ? decryptedData.activeLocation : "") });
 
-        res.status(200).send({
-            message: "User logged in successfully",
-            user: sanitizedUser,
-            token: accessToken,
-        });
+            if (user)
+            {
+                user.accountEmail = decryptedData.email;
+                await user.save();
 
-
+                return res.status(200).send({
+                    message: "User token decrypted successfully",
+                    user: {
+                        accountId: user.accountId,
+                        userlocationId: user.userlocationId,
+                    }
+                });
+            }
+            else
+            {
+                return res.status(400).send({
+                    message: "No Such User Exists",
+                });
+            }
+        }
+        else
+        {
+            return res.status(400).send({
+                message: "User token is invalid",
+            });
+        }
     }
     catch(error)
     {
