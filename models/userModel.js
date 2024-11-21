@@ -14,7 +14,7 @@ const userSchema = new Schema(
       required: true,
     },
 
-    userlocationId: {
+    userLocationId: {
       type: String,
       required: true,
     },

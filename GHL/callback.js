@@ -40,11 +40,11 @@ export const callback = async (req, res) => {
     expiryDate.setSeconds(expiryDate.getSeconds() + (expires_in - 60));
 
     await userModel.findOneAndUpdate(
-      { accountId: userId, userlocationId: locationId },
+      { accountId: userId, userLocationId: locationId },
       {
         $set: {
           accountId: userId,
-          userlocationId: locationId,
+          userLocationId: locationId,
           access_token: access_token,
           refresh_token: refresh_token,
           expiryDate: expiryDate,

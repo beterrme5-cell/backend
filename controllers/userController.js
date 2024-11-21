@@ -2,6 +2,7 @@ import userModel from "../models/userModel.js";
 import { generateToken } from "../services/auth.js";
 import { sanitizeUser } from "../services/sanitization.js";
 import CryptoJS from "crypto-js";
+import axios from "axios";
 
 export const decryptUserToken = async (req, res) =>
 {
@@ -15,7 +16,7 @@ export const decryptUserToken = async (req, res) =>
 
         if (decryptedData.userId)
         {
-            const user = await userModel.findOne({ accountId: decryptedData.userId, userlocationId: (decryptedData.activeLocation ? decryptedData.activeLocation : "") });
+            const user = await userModel.findOne({ accountId: decryptedData.userId, userLocationId: (decryptedData.activeLocation ? decryptedData.activeLocation : "") });
 
             if (user)
             {
@@ -26,7 +27,7 @@ export const decryptUserToken = async (req, res) =>
                     message: "User token decrypted successfully",
                     user: {
                         accountId: user.accountId,
-                        userlocationId: user.userlocationId,
+                        userLocationId: user.userLocationId,
                     }
                 });
             }
@@ -41,6 +42,49 @@ export const decryptUserToken = async (req, res) =>
                 message: "User token is invalid",
             });
         }
+    }
+    catch(error)
+    {
+        res.status(400).json({ message: error.message });
+    }
+}
+
+export const getUserContacts = async (req, res) =>
+{
+    try
+    {
+        const { page = 1, pageLimit = 10 } = req.body;
+        const user = req.user;
+
+        const userData = await userModel.findOne({ accountId: user.accountId, userLocationId: user.userLocationId });
+        if (!userData) {
+            return res.status(400).send({
+                message: "User not found",
+            });
+        }
+
+        const options = {
+        method: 'POST',
+        url: 'https://services.leadconnectorhq.com/contacts/search',
+        headers: {
+            Authorization: `Bearer ${userData.accessToken}`,
+            Version: process.env.GHL_API_VERSION,
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+        },
+        data: {
+            locationId: user.userLocationId,
+            page: page,
+            pageLimit: pageLimit
+        }
+        };
+
+        const { data } = await axios.request(options);
+
+        return res.status(200).send({
+            message: "Contacts retrieved successfully",
+            contacts: data,
+        });
     }
     catch(error)
     {

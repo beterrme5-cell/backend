@@ -6,9 +6,10 @@ export const saveNewVideo = async (req, res) =>
 {
     try {
 
-        const { title, embeddedLink, shareableLink, user } = req.body;
+        const { title, embeddedLink, shareableLink} = req.body;
+        const user = req.user;
 
-        const userData = await userModel.findOne({ accountId: user.accountId, userlocationId: user.userlocationId });
+        const userData = await userModel.findOne({ accountId: user.accountId, userLocationId: user.userLocationId });
         if (!userData) {
             return res.status(400).send({
                 message: "User not found",
@@ -55,9 +56,10 @@ export const updateVideo = async (req, res) =>
 export const deleteVideo = async (req, res) =>
 {
     try {
-        const { videoId, user } = req.params;
+        const { videoId } = req.params;
+        const user = req.user;
 
-        const userData = await userModel.findOne({ accountId: user.accountId, userlocationId: user.userlocationId });
+        const userData = await userModel.findOne({ accountId: user.accountId, userLocationId: user.userLocationId });
         if (!userData) {
             return res.status(400).send({
                 message: "User not found",
@@ -91,8 +93,15 @@ export const deleteVideo = async (req, res) =>
 // get all videos by account id
 export const getVideosByAccountId = async (req, res) => {
     try {
-        const { id } = req.params;
-        const video = await videoModel.find({ accountId: id });
+        const user = req.user;
+
+        const userData = await userModel.findOne({ accountId: user.accountId, userLocationId: user.userLocationId });
+        if (!userData) {
+            return res.status(400).send({
+                message: "User not found",
+            });
+        }
+        const video = await videoModel.find({ creator: userData._id });
 
         res.status(200).send({
             message: "Videos retrieved successfully",
