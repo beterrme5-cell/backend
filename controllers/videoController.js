@@ -101,11 +101,11 @@ export const getVideosByAccountId = async (req, res) => {
                 message: "User not found",
             });
         }
-        const video = await videoModel.find({ creator: userData._id });
+        const videos = await videoModel.find({ creator: userData._id });
 
         res.status(200).send({
             message: "Videos retrieved successfully",
-            video,
+            videos,
         })
     }
     catch (error) {
