@@ -2,7 +2,8 @@ import jwt from 'jsonwebtoken';
 
 // Middleware to authenticate access tokens
 export const authenticateToken = async (req, res, next) => {
-    const token = req.cookies.accessToken;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
     if (!token) {
         return res.status(401).json({ message: 'No token provided' });
     }

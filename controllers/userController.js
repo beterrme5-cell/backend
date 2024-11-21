@@ -24,14 +24,14 @@ export const decryptUserToken = async (req, res) =>
                 await user.save();
 
                 const token = generateToken(user);
-                res.cookie("accessToken", token);
 
                 return res.status(200).send({
                     message: "User token decrypted successfully",
                     user: {
                         accountId: user.accountId,
                         userLocationId: user.userLocationId,
-                    }
+                    },
+                    accessToken: token
                 });
             }
             else
