@@ -23,6 +23,9 @@ export const decryptUserToken = async (req, res) =>
                 user.accountEmail = decryptedData.email;
                 await user.save();
 
+                const token = generateToken(user);
+                res.cookie("accessToken", token);
+
                 return res.status(200).send({
                     message: "User token decrypted successfully",
                     user: {
