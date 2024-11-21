@@ -45,8 +45,8 @@ export const callback = async (req, res) => {
         $set: {
           accountId: userId,
           userLocationId: locationId,
-          access_token: access_token,
-          refresh_token: refresh_token,
+          accessToken: access_token,
+          refreshToken: refresh_token,
           expiryDate: expiryDate,
           scope: scope,
           companyId: companyId,

@@ -59,12 +59,17 @@ export const getUserContacts = async (req, res) =>
         const { page = 1, pageLimit = 10 } = req.body;
         const user = req.user;
 
+        console.log(user);
+
         const userData = await userModel.findOne({ accountId: user.accountId, userLocationId: user.userLocationId });
         if (!userData) {
             return res.status(400).send({
                 message: "User not found",
             });
         }
+
+        // console.log("abcd");
+        // console.log(userData.accessToken);
 
         const options = {
         method: 'POST',
@@ -91,6 +96,7 @@ export const getUserContacts = async (req, res) =>
     }
     catch(error)
     {
+        console.log(error);
         res.status(400).json({ message: error.message });
     }
 }
