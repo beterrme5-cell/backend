@@ -6,7 +6,7 @@ export const initiate = async (req, res) => {
   const options = {
     requestType: "code",
     redirectUri: "http://localhost:8000/oauth/callback",
-    scopes: ["contacts.readonly", "conversations/message.write", "users.readOnly", "locations.readOnly"],
+    scopes: ["contacts.readonly", "conversations/message.write", "users.readonly", "locations.readonly"],
   };
 
   return res.redirect(
