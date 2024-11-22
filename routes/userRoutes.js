@@ -9,9 +9,10 @@ export const userRoutes = Router();
 
 // Importing Middlewares
 import { authenticateToken } from "../middlewares/authenticateToken.js";
+import { verifyAccessToken } from "../middlewares/refreshAccessToken.js";
 
 //Get User Data from GHL Key
 userRoutes.post("/decryptUserToken", decryptUserToken);
 
 //Get User Contacts
-userRoutes.post("/getUserContacts", authenticateToken, getUserContacts);
+userRoutes.post("/getUserContacts", authenticateToken, verifyAccessToken, getUserContacts);

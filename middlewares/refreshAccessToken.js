@@ -1,0 +1,51 @@
+import userModel from "../models/userModel.js";
+import axios from "axios";
+import { URLSearchParams } from 'url';
+
+export const verifyAccessToken = async (req, res, next) => {
+
+    const user = req.user;
+
+    const userData = await userModel.findOne({ accountId: user.accountId, userLocationId: user.userLocationId });
+    if (!userData) {
+        return res.status(400).send({
+            message: "User not found",
+        });
+    }
+
+    //Check if token is expired
+    if (userData.expiryDate < Date.now()) {
+
+        const encodedParams = new URLSearchParams();
+        encodedParams.set('client_id', process.env.GHL_CLIENT_ID);
+        encodedParams.set('client_secret', process.env.GHL_CLIENT_SECRET);
+        encodedParams.set('grant_type', 'refresh_token');
+        encodedParams.set('refresh_token', userData.refreshToken);
+
+        const options = {
+        method: 'POST',
+        url: 'https://services.leadconnectorhq.com/oauth/token',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Accept: 'application/json'
+        },
+        data: encodedParams,
+        };
+
+        const { data } = await axios.request(options);
+        console.log(data);
+
+        var newexpiryDate = new Date();
+        newexpiryDate.setSeconds(newexpiryDate.getSeconds() + (data.expires_in - 60));
+
+        userData.accessToken = data.access_token;
+        userData.refreshToken = data.refresh_token;
+        userData.expiryDate = newexpiryDate;
+        userData.scope = data.scope;
+
+        await userData.save();
+
+    }
+
+    next();
+};
