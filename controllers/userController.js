@@ -14,6 +14,8 @@ export const decryptUserToken = async (req, res) =>
         var decryptedData = CryptoJS.AES.decrypt(token, ssoDecryptionKey).toString(CryptoJS.enc.Utf8);
         decryptedData = JSON.parse(decryptedData);
 
+        console.log("Decrypted daata", decryptedData);
+
         if (decryptedData.userId)
         {
             const user = await userModel.findOne({ accountId: decryptedData.userId, userLocationId: (decryptedData.activeLocation ? decryptedData.activeLocation : "") });

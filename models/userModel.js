@@ -28,6 +28,10 @@ const userSchema = new Schema(
       type: String,
     },
 
+    accountPhone: {
+      type: String,
+    },
+
     accessToken: {
       type: String,
     },

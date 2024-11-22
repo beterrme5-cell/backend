@@ -11,6 +11,10 @@ export const callback = async (req, res) => {
 
     console.log ("CODE", req.query.code);
 
+    if (!req.query.code) {
+      return res.redirect("https://app.gohighlevel.com/");
+    }
+
     const response = await axios.post(
       "https://services.leadconnectorhq.com/oauth/token",
       qs.stringify({
