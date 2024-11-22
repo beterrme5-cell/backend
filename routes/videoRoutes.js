@@ -12,6 +12,7 @@ from "../controllers/videoController.js";
 
 //middlewares
 import { authenticateToken } from "../middlewares/authenticateToken.js";
+import { verifyAccessToken } from "../middlewares/refreshAccessToken.js";
 
 export const videoRoutes = Router();
 
@@ -22,7 +23,7 @@ videoRoutes.post("/saveNewVideo", authenticateToken,  saveNewVideo);
 videoRoutes.put("/updateVideo", authenticateToken, updateVideo);
 
 //Delete a video
-videoRoutes.delete("/deleteVideo/:accountId/:videoId", authenticateToken, deleteVideo);
+videoRoutes.delete("/deleteVideo/:videoId", authenticateToken, deleteVideo);
 
 //Get all videos by account id
 videoRoutes.get("/getVideosByAccountId", authenticateToken, getVideosByAccountId);
