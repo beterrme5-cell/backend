@@ -15,6 +15,7 @@ import { userRoutes } from "./routes/userRoutes.js";
 import { videoRoutes } from "./routes/videoRoutes.js";
 import { initiate } from "./GHL/initiate.js";
 import { callback } from "./GHL/callback.js";
+import { commRoutes } from "./routes/commRoutes.js";
 
 const MAX_RETRIES = 5; // Maximum number of retries
 const RETRY_DELAY = 5000; // Delay between retries in milliseconds (5 seconds)
@@ -60,7 +61,8 @@ app.use(cors(corsOptions));
 // Using the routes
 app.use("/oauth/callback", callback);
 app.use("/api/user", userRoutes);
-app.use("/init", initiate)
+app.use("/api/comms", commRoutes);
+app.use("/init", initiate);
 app.use("/api/video", videoRoutes);
 
 // Generate JWT for Loom SDK
