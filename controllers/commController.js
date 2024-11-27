@@ -1,11 +1,13 @@
 import axios from "axios";
 import userModel from "../models/userModel.js";
+import historyModel from "../models/historyModel.js";
+import { getAllUserContacts } from "../services/contactRetrieval.js";
 
 export const sendSMSController = async (req, res) => {
   try {
-    const { contactIds, message } = req.body;
+    let { videoId, contactIds, message, sendToAll } = req.body;
 
-    if (!contactIds || contactIds.length === 0) {
+    if ((!contactIds || contactIds.length === 0) && sendToAll === false) {
       return res.status(400).send({
         message: "Please provide at least one contact id",
       });
@@ -30,15 +32,20 @@ export const sendSMSController = async (req, res) => {
       });
     }
 
+    if (sendToAll == true)
+    {
+      contactIds = await getAllUserContacts(user, userData, false);
+    }
+
     // Use Promise.all to send emails
-    const emailPromises = contactIds.map(async (contactId) => {
+    const emailPromises = contactIds.map(async (contact) => {
       try {
-        console.log(`Sending SMS to: ${contactId}`);
+        console.log(`Sending SMS to: ${contact.id}`);
         const response = await axios.post(
           "https://services.leadconnectorhq.com/conversations/messages",
           {
             type: "SMS",
-            contactId: contactId, // Ensure this is a valid field
+            contactId: contact.id, // Ensure this is a valid field
             message: message,
           },
           {
@@ -50,10 +57,28 @@ export const sendSMSController = async (req, res) => {
             },
           }
         );
-        return { contactId, status: "success", data: response.data };
+
+        await historyModel.create({
+          video: videoId,
+          contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+          sendType: "sms",
+          subject: "",
+          status: "sent",
+        })
+
+        return { contactId: contact.id, status: "success", data: response.data };
       } catch (err) {
+
+        await historyModel.create({
+          video: videoId,
+          contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+          sendType: "sms",
+          subject: "",
+          status: "failed",
+        })
+
         console.error(
-          `Failed to send SMS to ${contactId}:`,
+          `Failed to send SMS to ${contact.id}:`,
           err.response?.data || err.message
         );
         return {
@@ -88,9 +113,9 @@ export const sendSMSController = async (req, res) => {
 
 export const sendEmailController = async (req, res) => {
   try {
-    const { contactIds, message } = req.body;
+    let { videoId, contactIds, message, sendToAll } = req.body;
 
-    if (!contactIds || contactIds.length === 0) {
+    if ((!contactIds || contactIds.length === 0) && sendToAll === false) {
       return res.status(400).send({
         message: "Please provide at least one email id",
       });
@@ -115,16 +140,23 @@ export const sendEmailController = async (req, res) => {
       });
     }
 
+    const {subject = "Konected - Loom Video"} = req.body
+
+    if (sendToAll == true)
+    {
+      contactIds = await getAllUserContacts(user, userData, true);
+    }
+
     // Use Promise.all to send emails
-    const emailPromises = contactIds.map(async (contactId) => {
+    const emailPromises = contactIds.map(async (contact) => {
       try {
-        console.log(`Sending email to: ${contactId}`);
+        console.log(`Sending email to: ${contact.id}`);
         const response = await axios.post(
           "https://services.leadconnectorhq.com/conversations/messages",
           {
             type: "Email",
-            contactId: contactId, // Ensure this is a valid field
-            subject: "Konected - Loom Video",
+            contactId: contact.id, // Ensure this is a valid field
+            subject: subject,
             html: message,
           },
           {
@@ -136,10 +168,29 @@ export const sendEmailController = async (req, res) => {
             },
           }
         );
-        return { contactId, status: "success", data: response.data };
+
+        await historyModel.create({
+          video: videoId,
+          contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+          sendType: "email",
+          subject: "",
+          status: "sent",
+        })
+
+        return { contactId: contact, status: "success", data: response.data };
+
       } catch (err) {
+
+        await historyModel.create({
+          video: videoId,
+          contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+          sendType: "email",
+          subject: "",
+          status: "failed",
+        })
+
         console.error(
-          `Failed to send email to ${contactId}:`,
+          `Failed to send email to ${contact.id}:`,
           err.response?.data || err.message
         );
         return {
