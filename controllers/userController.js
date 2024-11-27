@@ -1,4 +1,5 @@
 import userModel from "../models/userModel.js";
+import historyModel from "../models/historyModel.js";
 import { generateToken } from "../services/auth.js";
 import { sanitizeUser } from "../services/sanitization.js";
 import CryptoJS from "crypto-js";
@@ -94,5 +95,63 @@ export const getUserContacts = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const getUserHistories = async (req, res) => {
+  try 
+  {
+    const user = req.user;
+
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      userLocationId: user.userLocationId,
+    });
+
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
+    //Get all histories for all videos of a user
+    const histories = await historyModel.aggregate([
+      {
+        $lookup: {
+          from: "videos", // Collection name for Video
+          localField: "video", // Field in History referencing Video
+          foreignField: "_id", // Field in Video being referenced
+          as: "videoDetails", // Output field for the joined data
+        },
+      },
+      {
+        $unwind: "$videoDetails", // Flatten the videoDetails array
+      },
+      {
+        $match: {
+          "videoDetails.creator": userData._id, // Filter by user ID in Video
+        },
+      },
+      {
+        $addFields: {
+          videoTitle: "$videoDetails.title", // Add videoName field
+        },
+      },
+      {
+        $project: {
+          videoDetails: 0, // Exclude videoDetails field
+        },
+      },
+    ]);
+
+
+    return res.status(200).send({
+      message: "Histories retrieved successfully",
+      histories,
+    });
+  }
+  catch (error) {
+    console.log(error);
+    res.status(400).json({ message: error.message, error });
   }
 };

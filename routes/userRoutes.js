@@ -2,7 +2,8 @@ import { Router } from "express";
 import 
 { 
     decryptUserToken,
-    getUserContacts
+    getUserContacts,
+    getUserHistories
 } from "../controllers/userController.js";
 
 export const userRoutes = Router();
@@ -16,3 +17,6 @@ userRoutes.post("/decryptUserToken", decryptUserToken);
 
 //Get User Contacts
 userRoutes.post("/getUserContacts", authenticateToken, verifyAccessToken, getUserContacts);
+
+//Get User Histories
+userRoutes.get("/getUserHistories", authenticateToken, getUserHistories);
