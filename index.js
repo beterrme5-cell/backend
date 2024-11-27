@@ -3,29 +3,25 @@ import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
-import { importPKCS8, SignJWT } from "jose";
+// import { importPKCS8, SignJWT } from "jose";
+import * as jose from "jose";
 import fs from "fs";
-// Configuring the environment variables
-dotenv.config();
-import cors from "cors";
-const PORT = process.env.PORT;
 
 // Importing the routes
 import { userRoutes } from "./routes/userRoutes.js";
 import { videoRoutes } from "./routes/videoRoutes.js";
 import { initiate } from "./GHL/initiate.js";
 import { callback } from "./GHL/callback.js";
+import { commRoutes } from "./routes/commRoutes.js";
+
+// Configuring the environment variables
+dotenv.config();
+import cors from "cors";
+const PORT = process.env.PORT;
 
 const MAX_RETRIES = 5; // Maximum number of retries
 const RETRY_DELAY = 5000; // Delay between retries in milliseconds (5 seconds)
-
-const PRIVATE_PEM = fs.readFileSync(
-  // "./konnected.u2Thi5o-BU.private-key.pem", // For Custom SDK
-  "./recording-app.lGd-5+gulD.private-key.pem", // For Standard SDK
-  "utf8"
-);
-// const PUBLIC_APP_ID = "d5dfdcdb-3445-443a-9fca-a61b0161a9ae"; // Public APP ID For Custom SDK
-const PUBLIC_APP_ID = "06dbde78-c4db-449e-b09a-52a2e27aeeba"; // Public APP ID For Standard SDK
+const LOOM_SDK_APP_ID = process.env.LOOM_SDK_APP_ID;
 
 // Creating the express app
 const app = express();
@@ -60,25 +56,29 @@ app.use(cors(corsOptions));
 // Using the routes
 app.use("/oauth/callback", callback);
 app.use("/api/user", userRoutes);
-app.use("/init", initiate)
+app.use("/api/comms", commRoutes);
+app.use("/init", initiate);
 app.use("/api/video", videoRoutes);
 
 // Generate JWT for Loom SDK
-app.get("/get-loom-token", async (req, res) => {
-  try {
-    const privateKey = await importPKCS8(PRIVATE_PEM, "RS256");
-    const token = await new SignJWT({})
-      .setProtectedHeader({ alg: "RS256" })
-      .setIssuedAt()
-      .setIssuer(PUBLIC_APP_ID)
-      .setExpirationTime("2m") // Token expires in 2 minutes
-      .sign(privateKey);
+app.get("/setup", async (_, res) => {
+  const PRIVATE_PEM = fs.readFileSync("./private-key.pem", {
+    encoding: "utf8",
+  });
 
-    res.json({ token });
-  } catch (error) {
-    console.error("Error generating JWT:", error);
-    res.status(500).json({ error: "Failed to generate token" });
-  }
+  // Load private key from PEM
+  const pk = await jose.importPKCS8(PRIVATE_PEM, "RS256");
+
+  // Construct and sign JWS
+  let jws = await new jose.SignJWT({})
+    .setProtectedHeader({ alg: "RS256" })
+    .setIssuedAt()
+    .setIssuer(LOOM_SDK_APP_ID)
+    .setExpirationTime("2h")
+    .sign(pk);
+
+  // Write content to client and end the response
+  return res.json({ token: jws });
 });
 
 let retryCount = 0;
@@ -89,8 +89,8 @@ const connectWithRetry = () => {
     .then(() => {
       console.log("Connected to MongoDB!");
       // Start the server only after successful DB connection
-      app.listen(process.env.PORT, () => {
-        console.log(`Server is running on port ${process.env.PORT}`);
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
       });
     })
     .catch((err) => {
