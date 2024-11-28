@@ -9,6 +9,10 @@ const historySchema = new Schema({
         type: String,
         required: true,
     },
+    contactAddress: {
+        type: String,
+        required: true,
+    },
     sendType: {
         type: String,
         enum: ["email", "sms"],

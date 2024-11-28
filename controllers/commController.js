@@ -61,6 +61,7 @@ export const sendSMSController = async (req, res) => {
         await historyModel.create({
           video: videoId,
           contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+          contactAddress: contact.phone,
           sendType: "sms",
           subject: "",
           status: "sent",
@@ -72,6 +73,7 @@ export const sendSMSController = async (req, res) => {
         await historyModel.create({
           video: videoId,
           contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+          contactAddress: contact.phone,
           sendType: "sms",
           subject: "",
           status: "failed",
@@ -172,6 +174,7 @@ export const sendEmailController = async (req, res) => {
         await historyModel.create({
           video: videoId,
           contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+          contactAddress: contact.email,
           sendType: "email",
           subject: subject,
           status: "sent",
@@ -184,6 +187,7 @@ export const sendEmailController = async (req, res) => {
         await historyModel.create({
           video: videoId,
           contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+          contactAddress: contact.email,
           sendType: "email",
           subject: subject,
           status: "failed",
