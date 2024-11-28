@@ -173,7 +173,7 @@ export const sendEmailController = async (req, res) => {
           video: videoId,
           contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
           sendType: "email",
-          subject: "",
+          subject: subject,
           status: "sent",
         })
 
@@ -185,7 +185,7 @@ export const sendEmailController = async (req, res) => {
           video: videoId,
           contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
           sendType: "email",
-          subject: "",
+          subject: subject,
           status: "failed",
         })
 
