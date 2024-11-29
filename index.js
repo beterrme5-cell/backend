@@ -31,10 +31,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-const allowedOrigins = [
-  "https://recording-app-front-end.vercel.app",
-  "https://recording-app-front-end.vercel.app/",
-];
+const allowedOrigins = ["https://recording-app-front-end.vercel.app"];
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -82,6 +79,8 @@ app.get("/setup", async (_, res) => {
     .setIssuer(LOOM_SDK_APP_ID)
     .setExpirationTime("2h")
     .sign(pk);
+
+  console.log(jws);
 
   // Write content to client and end the response
   return res.json({ token: jws });
