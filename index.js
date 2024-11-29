@@ -70,7 +70,11 @@ app.get("/setup", async (_, res) => {
   //   encoding: "utf8",
   // });
 
+  console.log("PEM Key Before Replace:", process.env.PEM_FILE_KEY);
+
   const privateKey = process.env.PEM_FILE_KEY.replace(/\\n/g, "\n");
+
+  console.log("PEM Key:", privateKey);
 
   // Load private key from PEM
   const pk = await jose.importPKCS8(privateKey, "RS256");
