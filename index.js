@@ -16,7 +16,7 @@ import { commRoutes } from "./routes/commRoutes.js";
 
 // Configuring the environment variables
 dotenv.config();
-// import cors from "cors";
+import cors from "cors";
 const PORT = process.env.PORT;
 
 const MAX_RETRIES = 5; // Maximum number of retries
@@ -31,28 +31,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// const allowedOrigins = ["https://recording-app-front-end.vercel.app"];
+const allowedOrigins = ["https://recording-app-front-end.vercel.app"];
 
-// const corsOptions = {
-//   origin: function (origin, callback) {
-//     if (!origin) return callback(null, true);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
 
-//     // Allow any subdomain of .monday.app
-//     if (
-//       origin.endsWith(":5173") ||
-//       origin.endsWith("ngrok-free.app") ||
-//       origin.endsWith(".vercel.app") ||
-//       allowedOrigins.includes(origin)
-//     ) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error("Not allowed by CORS"));
-//     }
-//   },
-//   credentials: true,
-// };
+    // Allow any subdomain of .monday.app
+    if (
+      origin.endsWith(":5173") ||
+      origin.endsWith("ngrok-free.app") ||
+      origin.endsWith(".vercel.app") ||
+      allowedOrigins.includes(origin)
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+};
 
-// app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 
 // Using the routes
 app.use("/oauth/callback", callback);
