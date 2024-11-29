@@ -32,69 +32,83 @@ export const sendSMSController = async (req, res) => {
       });
     }
 
-    if (sendToAll == true)
-    {
+    if (sendToAll === true) {
       contactIds = await getAllUserContacts(user, userData, false);
     }
 
-    // Use Promise.all to send emails
-    const emailPromises = contactIds.map(async (contact) => {
-      try {
-        console.log(`Sending SMS to: ${contact.id}`);
-        const response = await axios.post(
-          "https://services.leadconnectorhq.com/conversations/messages",
-          {
-            type: "SMS",
-            contactId: contact.id, // Ensure this is a valid field
-            message: message,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${userData.accessToken}`,
-              Version: "2021-04-15",
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
+    // Helper function to create a delay
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    let results = [];
+    for (let i = 0; i < contactIds.length; i += 100) {
+      const batch = contactIds.slice(i, i + 100);
+
+      // Process the current batch
+      const batchResults = await Promise.all(
+        batch.map(async (contact) => {
+          try {
+            console.log(`Sending SMS to: ${contact.id}`);
+            const response = await axios.post(
+              "https://services.leadconnectorhq.com/conversations/messages",
+              {
+                type: "SMS",
+                contactId: contact.id,
+                message: message,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${userData.accessToken}`,
+                  Version: "2021-04-15",
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                },
+              }
+            );
+
+            await historyModel.create({
+              video: videoId,
+              contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+              contactAddress: contact.phone,
+              sendType: "sms",
+              subject: "",
+              status: "sent",
+            });
+
+            return { contactId: contact.id, status: "success", data: response.data };
+          } catch (err) {
+            await historyModel.create({
+              video: videoId,
+              contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+              contactAddress: contact.phone,
+              sendType: "sms",
+              subject: "",
+              status: "failed",
+            });
+
+            console.error(
+              `Failed to send SMS to ${contact.id}:`,
+              err.response?.data || err.message
+            );
+            return {
+              contactId: contact.id,
+              status: "error",
+              error: err.response?.data || err.message,
+            };
           }
-        );
-
-        await historyModel.create({
-          video: videoId,
-          contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
-          contactAddress: contact.phone,
-          sendType: "sms",
-          subject: "",
-          status: "sent",
         })
+      );
 
-        return { contactId: contact.id, status: "success", data: response.data };
-      } catch (err) {
+      results = results.concat(batchResults);
 
-        await historyModel.create({
-          video: videoId,
-          contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
-          contactAddress: contact.phone,
-          sendType: "sms",
-          subject: "",
-          status: "failed",
-        })
-
-        console.error(
-          `Failed to send SMS to ${contact.id}:`,
-          err.response?.data || err.message
-        );
-        return {
-          emailId,
-          status: "error",
-          error: err.response?.data || err.message,
-        };
+      // Wait 10 seconds before processing the next batch
+      if (i + 100 < contactIds.length) {
+        console.log("Waiting 10 seconds before sending the next batch...");
+        await delay(10000);
       }
-    });
+    }
 
-    const results = await Promise.all(emailPromises);
-
-    const failedEmails = results.filter((result) => result.status === "error");
-    if (failedEmails.length > 0) {
+    const failedSMS = results.filter((result) => result.status === "error");
+    if (failedSMS.length > 0) {
       return res.status(207).send({
         message: "Some SMS failed to send",
         details: results,
@@ -148,81 +162,94 @@ export const sendEmailController = async (req, res) => {
     {
       contactIds = await getAllUserContacts(user, userData, true);
     }
+   // Helper function to create a delay
+   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    // Use Promise.all to send emails
-    const emailPromises = contactIds.map(async (contact) => {
-      try {
-        console.log(`Sending email to: ${contact.id}`);
-        const response = await axios.post(
-          "https://services.leadconnectorhq.com/conversations/messages",
-          {
-            type: "Email",
-            contactId: contact.id, // Ensure this is a valid field
-            subject: subject,
-            html: message,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${userData.accessToken}`,
-              Version: "2021-04-15",
-              "Content-Type": "application/json",
-              Accept: "application/json",
+   let results = [];
+   for (let i = 0; i < contactIds.length; i += 100) {
+     const batch = contactIds.slice(i, i + 100);
+
+    // Process the current batch
+    const batchResults = await Promise.all(
+      batch.map(async (contact) => {
+        try {
+          console.log(`Sending email to: ${contact.id}`);
+          const response = await axios.post(
+            "https://services.leadconnectorhq.com/conversations/messages",
+            {
+              type: "Email",
+              contactId: contact.id,
+              subject: subject,
+              html: message,
             },
-          }
-        );
+            {
+              headers: {
+                Authorization: `Bearer ${userData.accessToken}`,
+                Version: "2021-04-15",
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+            }
+          );
 
-        await historyModel.create({
-          video: videoId,
-          contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
-          contactAddress: contact.email,
-          sendType: "email",
-          subject: subject,
-          status: "sent",
-        })
+          await historyModel.create({
+            video: videoId,
+            contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+            contactAddress: contact.email,
+            sendType: "email",
+            subject: subject,
+            status: "sent",
+          });
 
-        return { contactId: contact, status: "success", data: response.data };
+          return { contactId: contact, status: "success", data: response.data };
+        } catch (err) {
+          await historyModel.create({
+            video: videoId,
+            contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+            contactAddress: contact.email,
+            sendType: "email",
+            subject: subject,
+            status: "failed",
+          });
 
-      } catch (err) {
+          console.error(
+            `Failed to send email to ${contact.id}:`,
+            err.response?.data || err.message
+          );
+          return {
+            contactId: contact.id,
+            status: "error",
+            error: err.response?.data || err.message,
+          };
+        }
+      })
+    );
 
-        await historyModel.create({
-          video: videoId,
-          contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
-          contactAddress: contact.email,
-          sendType: "email",
-          subject: subject,
-          status: "failed",
-        })
+     results = results.concat(batchResults);
 
-        console.error(
-          `Failed to send email to ${contact.id}:`,
-          err.response?.data || err.message
-        );
-        return {
-          emailId,
-          status: "error",
-          error: err.response?.data || err.message,
-        };
-      }
-    });
+     // Wait 10 seconds before processing the next batch
+     if (i + 100 < contactIds.length) {
+       console.log("Waiting 10 seconds before sending the next batch...");
+       await delay(10000);
+     }
+   }
 
-    const results = await Promise.all(emailPromises);
+   const failedEmails = results.filter((result) => result.status === "error");
+   if (failedEmails.length > 0) {
+     return res.status(207).send({
+       message: "Some emails failed to send",
+       details: results,
+     });
+   }
 
-    const failedEmails = results.filter((result) => result.status === "error");
-    if (failedEmails.length > 0) {
-      return res.status(207).send({
-        message: "Some emails failed to send",
-        details: results,
-      });
-    }
-
-    return res.status(200).send({
-      message: "All emails sent successfully",
-      data: results,
-    });
-  } catch (error) {
-    console.error("Unexpected error:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
-  }
+   return res.status(200).send({
+     message: "All emails sent successfully",
+     data: results,
+   });
+ } catch (error) {
+   console.error("Unexpected error:", error);
+   return res
+     .status(500)
+     .json({ message: "Internal server error", error: error.message });
+ }
 };
