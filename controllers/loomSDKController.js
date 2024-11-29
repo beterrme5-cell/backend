@@ -1,3 +1,8 @@
+import dotenv from "dotenv";
+import * as jose from "jose";
+
+dotenv.config();
+const LOOM_SDK_APP_ID = process.env.LOOM_SDK_APP_ID;
 export const loomSDKSetupController = async (req, res) => {
   const privateKey = process.env.PEM_FILE_KEY.replace(/\\n/g, "\n");
 

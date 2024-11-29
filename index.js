@@ -3,9 +3,6 @@ import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
-// import { importPKCS8, SignJWT } from "jose";
-import * as jose from "jose";
-import fs from "fs";
 
 // Importing the routes
 import { userRoutes } from "./routes/userRoutes.js";
@@ -22,7 +19,6 @@ const PORT = process.env.PORT;
 
 const MAX_RETRIES = 5; // Maximum number of retries
 const RETRY_DELAY = 5000; // Delay between retries in milliseconds (5 seconds)
-const LOOM_SDK_APP_ID = process.env.LOOM_SDK_APP_ID;
 
 // Creating the express app
 const app = express();
