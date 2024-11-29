@@ -31,25 +31,32 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-const allowedOrigins = ["https://recording-app-front-end.vercel.app"];
+// const allowedOrigins = ["https://recording-app-front-end.vercel.app"];
+
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (!origin) return callback(null, true);
+
+//     // Allow any subdomain of .monday.app
+//     if (
+//       origin.endsWith(":5173") ||
+//       origin.endsWith("ngrok-free.app") ||
+//       origin.endsWith(".vercel.app") ||
+//       allowedOrigins.includes(origin)
+//     ) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+//   credentials: true,
+// };
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    // Allow any subdomain of .monday.app
-    if (
-      origin.endsWith(":5173") ||
-      origin.endsWith("ngrok-free.app") ||
-      origin.endsWith(".vercel.app") ||
-      allowedOrigins.includes(origin)
-    ) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
+  origin: "*", // Allow all origins
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allow all common HTTP methods
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"], // Allow common headers
+  credentials: true, // Allow credentials (cookies, authorization headers)
 };
 
 app.use(cors(corsOptions));
