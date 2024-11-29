@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-const allowedOrigins = ["https://c219-115-186-189-21.ngrok-free.app"];
+const allowedOrigins = ["https://recording-app-front-end.vercel.app"];
 
 const corsOptions = {
   origin: function (origin, callback) {
