@@ -31,7 +31,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-const allowedOrigins = ["https://recording-app-front-end.vercel.app"];
+const allowedOrigins = [
+  "https://recording-app-front-end.vercel.app",
+  "https://recording-app-front-end.vercel.app/",
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
