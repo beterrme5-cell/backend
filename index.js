@@ -41,6 +41,7 @@ const corsOptions = {
     if (
       origin.endsWith(":5173") ||
       origin.endsWith("ngrok-free.app") ||
+      origin.endsWith(".vercel.app") ||
       allowedOrigins.includes(origin)
     ) {
       callback(null, true);
