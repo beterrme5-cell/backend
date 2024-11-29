@@ -1,0 +1,17 @@
+export const loomSDKSetupController = async (req, res) => {
+  const privateKey = process.env.PEM_FILE_KEY.replace(/\\n/g, "\n");
+
+  // Load private key from PEM
+  const pk = await jose.importPKCS8(privateKey, "RS256");
+
+  // Construct and sign JWS
+  let jws = await new jose.SignJWT({})
+    .setProtectedHeader({ alg: "RS256" })
+    .setIssuedAt()
+    .setIssuer(LOOM_SDK_APP_ID)
+    .setExpirationTime("2h")
+    .sign(pk);
+
+  // Write content to client and end the response
+  return res.json({ token: jws });
+};
