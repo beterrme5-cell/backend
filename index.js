@@ -16,7 +16,7 @@ import { commRoutes } from "./routes/commRoutes.js";
 
 // Configuring the environment variables
 dotenv.config();
-import cors from "cors";
+// import cors from "cors";
 const PORT = process.env.PORT;
 
 const MAX_RETRIES = 5; // Maximum number of retries
@@ -52,14 +52,7 @@ app.use(cookieParser());
 //   credentials: true,
 // };
 
-const corsOptions = {
-  origin: "*", // Allow all origins
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allow all common HTTP methods
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"], // Allow common headers
-  credentials: true, // Allow credentials (cookies, authorization headers)
-};
-
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 
 // Using the routes
 app.use("/oauth/callback", callback);
