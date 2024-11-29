@@ -5,8 +5,13 @@ dotenv.config();
 export const initiate = async (req, res) => {
   const options = {
     requestType: "code",
-    redirectUri: "http://localhost:8000/oauth/callback",
-    scopes: ["contacts.readonly", "conversations/message.write", "users.readonly", "locations.readonly"],
+    redirectUri: "https://ghl-recording-app-backend.vercel.app/oauth/callback",
+    scopes: [
+      "contacts.readonly",
+      "conversations/message.write",
+      "users.readonly",
+      "locations.readonly",
+    ],
   };
 
   return res.redirect(

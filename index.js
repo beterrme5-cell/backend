@@ -62,12 +62,14 @@ app.use("/api/video", videoRoutes);
 
 // Generate JWT for Loom SDK
 app.get("/setup", async (_, res) => {
-  const PRIVATE_PEM = fs.readFileSync("./konnectd.9+W34lVHx+.private-key.pem", {
-    encoding: "utf8",
-  });
+  // const PRIVATE_PEM = fs.readFileSync("./konnectd.9+W34lVHx+.private-key.pem", {
+  //   encoding: "utf8",
+  // });
+
+  const privateKey = process.env.PEM_FILE_KEY.replace(/\\n/g, "\n");
 
   // Load private key from PEM
-  const pk = await jose.importPKCS8(PRIVATE_PEM, "RS256");
+  const pk = await jose.importPKCS8(privateKey, "RS256");
 
   // Construct and sign JWS
   let jws = await new jose.SignJWT({})
