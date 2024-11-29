@@ -17,6 +17,7 @@ import { commRoutes } from "./routes/commRoutes.js";
 // Configuring the environment variables
 dotenv.config();
 import cors from "cors";
+import { loomSDKRoutes } from "./routes/loomSDK.js";
 const PORT = process.env.PORT;
 
 const MAX_RETRIES = 5; // Maximum number of retries
@@ -63,29 +64,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/comms", commRoutes);
 app.use("/init", initiate);
 app.use("/api/video", videoRoutes);
-
-// Generate JWT for Loom SDK
-app.get("/setup", async (_, res) => {
-  // const PRIVATE_PEM = fs.readFileSync("./konnectd.9+W34lVHx+.private-key.pem", {
-  //   encoding: "utf8",
-  // });
-
-  const privateKey = process.env.PEM_FILE_KEY.replace(/\\n/g, "\n");
-
-  // Load private key from PEM
-  const pk = await jose.importPKCS8(privateKey, "RS256");
-
-  // Construct and sign JWS
-  let jws = await new jose.SignJWT({})
-    .setProtectedHeader({ alg: "RS256" })
-    .setIssuedAt()
-    .setIssuer(LOOM_SDK_APP_ID)
-    .setExpirationTime("2h")
-    .sign(pk);
-
-  // Write content to client and end the response
-  return res.json({ token: jws });
-});
+app.use("/api/loom", loomSDKRoutes);
 
 let retryCount = 0;
 
