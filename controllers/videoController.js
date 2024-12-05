@@ -47,7 +47,7 @@ export const saveNewVideo = async (req, res) => {
       } catch (error) {
         return res.status(400).json({ message: error.message });
       }
-    }, 1500); // 1500ms = 1.5 seconds
+    }, 2000); // Delay the fetching of thumbnail URL by 2 seconds
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
