@@ -12,28 +12,42 @@ export const saveNewVideo = async (req, res) => {
       accountId: user.accountId,
       userLocationId: user.userLocationId,
     });
+
     if (!userData) {
       return res.status(400).send({
         message: "User not found",
       });
     }
 
-    // Fetch the thumbnail URL
-    const thumbnailURLResponse = await fetchThumbnailURL(shareableLink);
+    // Delay the fetching of thumbnail URL by 15 seconds
+    setTimeout(async () => {
+      try {
+        const fetchThumbnail = async () => {
+          const response = await fetchThumbnailURL(shareableLink);
+          return response;
+        };
 
-    const video = await videoModel.create({
-      creator: userData._id,
-      title,
-      embeddedLink,
-      shareableLink,
-      description: "",
-      thumbnailURL: thumbnailURLResponse.thumbnail_url,
-    });
+        // Fetch the thumbnail URL after the delay
+        const thumbnailURL = await fetchThumbnail();
 
-    return res.status(201).send({
-      message: "Video saved successfully",
-      video,
-    });
+        // Save the video after fetching the thumbnail
+        const video = await videoModel.create({
+          creator: userData._id,
+          title,
+          embeddedLink,
+          shareableLink,
+          description: "",
+          thumbnailURL: thumbnailURL.thumbnail_url, // Use the fetched thumbnail URL
+        });
+
+        return res.status(201).send({
+          message: "Video saved successfully",
+          video,
+        });
+      } catch (error) {
+        return res.status(400).json({ message: error.message });
+      }
+    }, 1500); // 1500ms = 1.5 seconds
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
