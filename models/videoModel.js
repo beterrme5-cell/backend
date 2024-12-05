@@ -1,27 +1,32 @@
 import { Schema, model } from "mongoose";
 
-const videoSchema = new Schema({
+const videoSchema = new Schema(
+  {
     creator: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     title: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     description: {
-        type: String,
+      type: String,
     },
     embeddedLink: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     shareableLink: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
-},
-    { timestamps: true }
+    thumbnailURL: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
 );
 
 export default model("Video", videoSchema);
