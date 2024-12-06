@@ -6,6 +6,9 @@ import { fetchThumbnailURL } from "../services/fetchThumbnailURL.js";
 export const saveNewVideo = async (req, res) => {
   try {
     const { title, embeddedLink, shareableLink } = req.body;
+
+    console.log("Video Title:", title);
+
     const user = req.user;
 
     const userData = await userModel.findOne({
@@ -23,12 +26,16 @@ export const saveNewVideo = async (req, res) => {
     setTimeout(async () => {
       try {
         const fetchThumbnail = async () => {
+          console.log("Fetching thumbnail URL...");
           const response = await fetchThumbnailURL(shareableLink);
           return response;
         };
 
+        console.log("Shareable Link:", shareableLink);
         // Fetch the thumbnail URL after the delay
         const thumbnailURL = await fetchThumbnail();
+
+        console.log("Thumbnail URL:", thumbnailURL);
 
         // Save the video after fetching the thumbnail
         const video = await videoModel.create({
@@ -47,7 +54,7 @@ export const saveNewVideo = async (req, res) => {
       } catch (error) {
         return res.status(400).json({ message: error.message });
       }
-    }, 2000); // Delay the fetching of thumbnail URL by 2 seconds
+    }, 5000); // Delay the fetching of thumbnail URL by 2 seconds
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
