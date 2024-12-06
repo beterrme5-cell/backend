@@ -31,27 +31,31 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-const allowedOrigins = ["https://c219-115-186-189-21.ngrok-free.app"];
+// const allowedOrigins = ["https://recording-app-front-end.vercel.app"];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (!origin) return callback(null, true);
 
-    // Allow any subdomain of .monday.app
-    if (
-      origin.endsWith(":5173") ||
-      origin.endsWith("ngrok-free.app") ||
-      allowedOrigins.includes(origin)
-    ) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-};
+//     // Allow any subdomain of .monday.app
+//     if (
+//       origin.endsWith(":5173") ||
+//       origin.endsWith("ngrok-free.app") ||
+//       origin.endsWith(".vercel.app") ||
+//       allowedOrigins.includes(origin)
+//     ) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+//   credentials: true,
+// };
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
+
+// Allow all origins
+app.use(cors({ origin: true, credentials: true }));
 
 // Using the routes
 app.use("/oauth/callback", callback);
@@ -62,12 +66,18 @@ app.use("/api/video", videoRoutes);
 
 // Generate JWT for Loom SDK
 app.get("/setup", async (_, res) => {
-  const PRIVATE_PEM = fs.readFileSync("./konnectd.9+W34lVHx+.private-key.pem", {
-    encoding: "utf8",
-  });
+  // const PRIVATE_PEM = fs.readFileSync("./konnectd.9+W34lVHx+.private-key.pem", {
+  //   encoding: "utf8",
+  // });
+
+  console.log("PEM Key Before Replace:", process.env.PEM_FILE_KEY);
+
+  const privateKey = process.env.PEM_FILE_KEY.replace(/\\n/g, "\n");
+
+  console.log("PEM Key:", privateKey);
 
   // Load private key from PEM
-  const pk = await jose.importPKCS8(PRIVATE_PEM, "RS256");
+  const pk = await jose.importPKCS8(privateKey, "RS256");
 
   // Construct and sign JWS
   let jws = await new jose.SignJWT({})
@@ -76,6 +86,8 @@ app.get("/setup", async (_, res) => {
     .setIssuer(LOOM_SDK_APP_ID)
     .setExpirationTime("2h")
     .sign(pk);
+
+  console.log(jws);
 
   // Write content to client and end the response
   return res.json({ token: jws });
@@ -111,4 +123,5 @@ const connectWithRetry = () => {
 };
 
 // // Initial connection attempt
+
 connectWithRetry();
