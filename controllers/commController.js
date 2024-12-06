@@ -1,5 +1,6 @@
 import axios from "axios";
 import userModel from "../models/userModel.js";
+import videoModel from "../models/videoModel.js";
 import historyModel from "../models/historyModel.js";
 import { getAllUserContacts } from "../services/contactRetrieval.js";
 
@@ -74,7 +75,9 @@ export const sendSMSController = async (req, res) => {
               status: "sent",
             });
 
-            return { contactId: contact.id, data: smsHistory };
+            const video = await videoModel.findById(videoId);
+
+            return { contactId: contact.id, data: smsHistory, videoName: video.title };
           } catch (err) {
             const smsHistory = await historyModel.create({
               video: videoId,
@@ -85,6 +88,8 @@ export const sendSMSController = async (req, res) => {
               status: "failed",
             });
 
+            const video = await videoModel.findById(videoId);
+
             console.error(
               `Failed to send SMS to ${contact.id}:`,
               err.response?.data || err.message
@@ -92,6 +97,7 @@ export const sendSMSController = async (req, res) => {
             return {
               contactId: contact.id,
               data: smsHistory,
+              videoName: video.title,
             };
           }
         })
@@ -200,7 +206,9 @@ export const sendEmailController = async (req, res) => {
             status: "sent",
           });
 
-          return { contactId: contact.id, data: emailHistory };
+          const video = await videoModel.findById(videoId);
+
+          return { contactId: contact.id, data: emailHistory, videoName: video.title };
         } catch (err) {
           const emailHistory = await historyModel.create({
             video: videoId,
@@ -211,6 +219,8 @@ export const sendEmailController = async (req, res) => {
             status: "failed",
           });
 
+          const video = await videoModel.findById(videoId);
+
           console.error(
             `Failed to send email to ${contact.id}:`,
             err.response?.data || err.message
@@ -218,6 +228,7 @@ export const sendEmailController = async (req, res) => {
           return {
             contactId: contact.id,
             data: emailHistory,
+            videoName: video.title,
           };
         }
       })
