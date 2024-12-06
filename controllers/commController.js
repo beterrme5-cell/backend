@@ -65,7 +65,7 @@ export const sendSMSController = async (req, res) => {
               }
             );
 
-            await historyModel.create({
+            const smsHistory = await historyModel.create({
               video: videoId,
               contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
               contactAddress: contact.phone,
@@ -74,9 +74,9 @@ export const sendSMSController = async (req, res) => {
               status: "sent",
             });
 
-            return { contactId: contact.id, status: "success", data: response.data };
+            return { contactId: contact.id, data: smsHistory };
           } catch (err) {
-            await historyModel.create({
+            const smsHistory = await historyModel.create({
               video: videoId,
               contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
               contactAddress: contact.phone,
@@ -91,8 +91,7 @@ export const sendSMSController = async (req, res) => {
             );
             return {
               contactId: contact.id,
-              status: "error",
-              error: err.response?.data || err.message,
+              data: smsHistory,
             };
           }
         })
@@ -192,7 +191,7 @@ export const sendEmailController = async (req, res) => {
             }
           );
 
-          await historyModel.create({
+          const emailHistory = await historyModel.create({
             video: videoId,
             contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
             contactAddress: contact.email,
@@ -201,9 +200,9 @@ export const sendEmailController = async (req, res) => {
             status: "sent",
           });
 
-          return { contactId: contact, status: "success", data: response.data };
+          return { contactId: contact.id, data: emailHistory };
         } catch (err) {
-          await historyModel.create({
+          const emailHistory = await historyModel.create({
             video: videoId,
             contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
             contactAddress: contact.email,
@@ -218,8 +217,7 @@ export const sendEmailController = async (req, res) => {
           );
           return {
             contactId: contact.id,
-            status: "error",
-            error: err.response?.data || err.message,
+            data: emailHistory,
           };
         }
       })
