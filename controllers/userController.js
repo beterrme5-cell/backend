@@ -155,3 +155,34 @@ export const getUserHistories = async (req, res) => {
     res.status(400).json({ message: error.message, error });
   }
 };
+
+export const getUserTags = async (req, res) => {
+  try {
+    const user = req.user;
+    // console.log(user);
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      userLocationId: user.userLocationId,
+    });
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
+    const options = {
+      method: 'GET',
+      url: `https://services.leadconnectorhq.com/locations/${userData.userLocationId}/tags`,
+      headers: {Authorization: `Bearer ${userData.accessToken}`, Version: '2021-07-28', Accept: 'application/json'}
+    };
+
+    const { data } = await axios.request(options);
+
+    return res.status(200).send({
+      message: "User tags retrieved successfully",
+      userTags: data.tags,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};

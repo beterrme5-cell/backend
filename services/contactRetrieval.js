@@ -52,3 +52,10 @@ export const getAllUserContacts = async (user, userData, forEmail) => {
     catch (error) {
     }
 };  
+
+export const filterContactsByTags = (contacts, tags) => {
+    
+    return contacts.filter((contact) => {
+        return tags.some((tag) => contact.tags.includes(tag));
+    });
+};

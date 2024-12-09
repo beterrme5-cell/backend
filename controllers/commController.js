@@ -2,11 +2,11 @@ import axios from "axios";
 import userModel from "../models/userModel.js";
 import videoModel from "../models/videoModel.js";
 import historyModel from "../models/historyModel.js";
-import { getAllUserContacts } from "../services/contactRetrieval.js";
+import { getAllUserContacts, filterContactsByTags } from "../services/contactRetrieval.js";
 
 export const sendSMSController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, sendToAll } = req.body;
+    let { videoId, contactIds, message, sendToAll, tags } = req.body;
 
     if ((!contactIds || contactIds.length === 0) && sendToAll === false) {
       return res.status(400).send({
@@ -36,6 +36,11 @@ export const sendSMSController = async (req, res) => {
     if (sendToAll === true) {
       contactIds = await getAllUserContacts(user, userData, false);
     }
+
+    if (tags && tags.length > 0) {
+      contactIds = await filterContactsByTags(contactIds, tags);
+    }
+
 
     // Helper function to create a delay
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -134,7 +139,7 @@ export const sendSMSController = async (req, res) => {
 
 export const sendEmailController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, sendToAll } = req.body;
+    let { videoId, contactIds, message, sendToAll, subject = "Konected - Loom Video", tags } = req.body;
 
     if ((!contactIds || contactIds.length === 0) && sendToAll === false) {
       return res.status(400).send({
@@ -161,12 +166,15 @@ export const sendEmailController = async (req, res) => {
       });
     }
 
-    const {subject = "Konected - Loom Video"} = req.body
-
     if (sendToAll == true)
     {
       contactIds = await getAllUserContacts(user, userData, true);
     }
+
+    if (tags && tags.length > 0) {
+      contactIds = await filterContactsByTags(contactIds, tags);
+    }
+
    // Helper function to create a delay
    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
