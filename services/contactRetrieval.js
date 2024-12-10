@@ -54,8 +54,15 @@ export const getAllUserContacts = async (user, userData, forEmail) => {
 };  
 
 export const filterContactsByTags = (contacts, tags) => {
+
+    // console.log("Tags : ", tags);
+    // console.log("Contacts : ", contacts);
     
-    return contacts.filter((contact) => {
+    const result = contacts.filter((contact) => {
         return tags.some((tag) => contact.tags.includes(tag));
     });
+
+    // console.log("Filtered Contacts : ", result);
+
+    return result;
 };

@@ -38,6 +38,7 @@ export const sendSMSController = async (req, res) => {
     }
 
     if (tags && tags.length > 0) {
+      contactIds = await getAllUserContacts(user, userData, false);
       contactIds = await filterContactsByTags(contactIds, tags);
     }
 
@@ -172,6 +173,7 @@ export const sendEmailController = async (req, res) => {
     }
 
     if (tags && tags.length > 0) {
+      contactIds = await getAllUserContacts(user, userData, true);
       contactIds = await filterContactsByTags(contactIds, tags);
     }
 
