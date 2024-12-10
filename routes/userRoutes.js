@@ -4,7 +4,8 @@ import
     decryptUserToken,
     getUserContacts,
     getUserHistories,
-    getUserTags
+    getUserTags,
+    getUserLocationId
 } from "../controllers/userController.js";
 
 export const userRoutes = Router();
@@ -24,3 +25,6 @@ userRoutes.get("/getUserHistories", authenticateToken, getUserHistories);
 
 //Get User Tags
 userRoutes.get("/getUserTags", authenticateToken, verifyAccessToken, getUserTags);
+
+//Get User Location Id
+userRoutes.get("/getUserLocationId", authenticateToken, getUserLocationId);

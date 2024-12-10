@@ -186,3 +186,26 @@ export const getUserTags = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const getUserLocationId = async (req, res) => {
+  try {
+    const user = req.user;
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      userLocationId: user.userLocationId,
+    });
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+
+    }
+
+    return res.status(200).send({
+      message: "User location id retrieved successfully",
+      userLocationId: userData.userLocationId,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
