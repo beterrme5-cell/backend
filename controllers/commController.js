@@ -8,7 +8,7 @@ export const sendSMSController = async (req, res) => {
   try {
     let { videoId, contactIds, message, sendToAll, tags } = req.body;
 
-    if ((!contactIds || contactIds.length === 0) && sendToAll === false) {
+    if ((!contactIds || contactIds.length === 0) && sendToAll === false  && tags.length === 0) {
       return res.status(400).send({
         message: "Please provide at least one contact id",
       });
@@ -141,7 +141,7 @@ export const sendEmailController = async (req, res) => {
   try {
     let { videoId, contactIds, message, sendToAll, subject = "Konected - Loom Video", tags } = req.body;
 
-    if ((!contactIds || contactIds.length === 0) && sendToAll === false) {
+    if ((!contactIds || contactIds.length === 0) && sendToAll === false && tags.length === 0) {
       return res.status(400).send({
         message: "Please provide at least one email id",
       });
