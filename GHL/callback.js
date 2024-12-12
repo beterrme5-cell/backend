@@ -9,8 +9,6 @@ dotenv.config();
 export const callback = async (req, res) => {
   try {
 
-    console.log ("CODE", req.query.code);
-
     if (!req.query.code) {
       return res.redirect("https://app.gohighlevel.com/");
     }
@@ -29,8 +27,6 @@ export const callback = async (req, res) => {
         },
       }
     );
-
-    // console.log("Response", response.data);
 
     const locationId = response.data.locationId ? response.data.locationId : "";
     const userId  = response.data.userId;
@@ -61,26 +57,6 @@ export const callback = async (req, res) => {
     );
 
     return res.redirect("https://app.gohighlevel.com/");
-    //search for contacts
-
-    // const options = {
-    //   method: 'POST',
-    //   url: 'https://services.leadconnectorhq.com/contacts/search',
-    //   headers: {
-    //     Authorization: `Bearer ${response.data.access_token}`,
-    //     Version: process.env.GHL_API_VERSION,
-    //     'Content-Type': 'application/json',
-    //     Accept: 'application/json'
-    //   },
-    //   data: {
-    //     locationId: response.data.locationId,
-    //     page: 1,
-    //     pageLimit: 10
-    //   }
-    // };
-    
-    // const { data } = await axios.request(options);
-    // console.log(data);
   } catch (error) {
     console.error("Error during API call:", error);
   }

@@ -5,12 +5,13 @@ dotenv.config();
 export const initiate = async (req, res) => {
   const options = {
     requestType: "code",
-    redirectUri: "https://ghl-recording-app-backend.vercel.app/oauth/callback",
+    redirectUri: "https://sendvid-backend.vercel.app/oauth/callback",
     scopes: [
       "contacts.readonly",
       "conversations/message.write",
       "users.readonly",
       "locations.readonly",
+      "locations/tags.readonly",
     ],
   };
 
