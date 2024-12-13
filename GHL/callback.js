@@ -8,9 +8,8 @@ dotenv.config();
 
 export const callback = async (req, res) => {
   try {
-
     if (!req.query.code) {
-      return res.redirect("https://app.gohighlevel.com/");
+      return res.status(400).send("Code not found");
     }
 
     const response = await axios.post(
@@ -29,7 +28,7 @@ export const callback = async (req, res) => {
     );
 
     const locationId = response.data.locationId ? response.data.locationId : "";
-    const userId  = response.data.userId;
+    const userId = response.data.userId;
     const access_token = response.data.access_token;
     const refresh_token = response.data.refresh_token;
     const expires_in = response.data.expires_in;
@@ -50,13 +49,15 @@ export const callback = async (req, res) => {
           expiryDate: expiryDate,
           scope: scope,
           companyId: companyId,
-          userCode: req.query.code
+          userCode: req.query.code,
         },
       },
       { new: true, upsert: true } // Upsert option added
     );
 
-    return res.redirect("https://app.gohighlevel.com/");
+    return res.redirect(
+      `https://app.gohighlevel.com/v2/location/${locationId}`
+    );
   } catch (error) {
     console.error("Error during API call:", error);
   }
