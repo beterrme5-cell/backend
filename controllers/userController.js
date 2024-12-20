@@ -87,6 +87,16 @@ export const getUserContacts = async (req, res) => {
                   operator: "contains",
                   value: search,
                 },
+                {
+                  field: "email",
+                  operator: "contains",
+                  value: search,
+                },
+                {
+                  field: "phone",
+                  operator: "contains",
+                  value: search,
+                },
               ],
             },
           ]
