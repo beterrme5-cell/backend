@@ -52,10 +52,8 @@ export const decryptUserToken = async (req, res) => {
 
 export const getUserContacts = async (req, res) => {
   try {
-    const { page = 1, pageLimit = 10 } = req.body;
+    const { page = 1, pageLimit = 10, search } = req.body;
     const user = req.user;
-
-    console.log(user);
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
@@ -67,8 +65,32 @@ export const getUserContacts = async (req, res) => {
       });
     }
 
-    // console.log("abcd");
-    // console.log(userData.accessToken);
+    if (search && search !== "" && search.length < 3) {
+      return res.status(400).send({
+        message: "Search query must be at least 3 characters",
+      });
+    }
+
+    let filters =
+      search && search !== ""
+        ? [
+            {
+              group: "OR",
+              filters: [
+                {
+                  field: "firstNameLowerCase",
+                  operator: "contains",
+                  value: search,
+                },
+                {
+                  field: "lastNameLowerCase",
+                  operator: "contains",
+                  value: search,
+                },
+              ],
+            },
+          ]
+        : [];
 
     const options = {
       method: "POST",
@@ -83,6 +105,7 @@ export const getUserContacts = async (req, res) => {
         locationId: user.userLocationId,
         page: page,
         pageLimit: pageLimit,
+        filters: filters,
       },
     };
 
@@ -99,8 +122,7 @@ export const getUserContacts = async (req, res) => {
 };
 
 export const getUserHistories = async (req, res) => {
-  try 
-  {
+  try {
     const user = req.user;
 
     const userData = await userModel.findOne({
@@ -144,13 +166,11 @@ export const getUserHistories = async (req, res) => {
       },
     ]);
 
-
     return res.status(200).send({
       message: "Histories retrieved successfully",
       histories,
     });
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
     res.status(400).json({ message: error.message, error });
   }
@@ -171,9 +191,13 @@ export const getUserTags = async (req, res) => {
     }
 
     const options = {
-      method: 'GET',
+      method: "GET",
       url: `https://services.leadconnectorhq.com/locations/${userData.userLocationId}/tags`,
-      headers: {Authorization: `Bearer ${userData.accessToken}`, Version: '2021-07-28', Accept: 'application/json'}
+      headers: {
+        Authorization: `Bearer ${userData.accessToken}`,
+        Version: "2021-07-28",
+        Accept: "application/json",
+      },
     };
 
     const { data } = await axios.request(options);
@@ -198,7 +222,6 @@ export const getUserLocationId = async (req, res) => {
       return res.status(400).send({
         message: "User not found",
       });
-
     }
 
     return res.status(200).send({

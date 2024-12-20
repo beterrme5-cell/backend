@@ -55,6 +55,25 @@ export const callback = async (req, res) => {
       { new: true, upsert: true } // Upsert option added
     );
 
+    if (locationId !== "") {
+      const options = {
+        method: "GET",
+        url: `https://services.leadconnectorhq.com/locations/${locationId}`,
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Version: "2021-07-28",
+          Accept: "application/json",
+        },
+      };
+      const { data } = await axios.request(options);
+      console.log("Domain: ", data.location.domain);
+      if (data.location.domain && data.location.domain !== "") {
+        return res.redirect(
+          `https://${data.location.domain}/location/${locationId}`
+        );
+      }
+    }
+
     return res.redirect(
       `https://app.gohighlevel.com/v2/location/${locationId}`
     );
