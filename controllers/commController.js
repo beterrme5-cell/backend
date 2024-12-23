@@ -2,13 +2,28 @@ import axios from "axios";
 import userModel from "../models/userModel.js";
 import videoModel from "../models/videoModel.js";
 import historyModel from "../models/historyModel.js";
-import { getAllUserContacts, filterContactsByTags } from "../services/contactRetrieval.js";
+import {
+  getAllUserContacts,
+  filterContactsByTags,
+} from "../services/contactRetrieval.js";
+import { incorporateShortCodes } from "../services/shortCode.js";
 
 export const sendSMSController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, sendToAll, tags } = req.body;
+    let {
+      videoId,
+      contactIds,
+      message,
+      sendToAll,
+      tags,
+      codesUsed = [],
+    } = req.body;
 
-    if ((!contactIds || contactIds.length === 0) && sendToAll === false  && tags.length === 0) {
+    if (
+      (!contactIds || contactIds.length === 0) &&
+      sendToAll === false &&
+      tags.length === 0
+    ) {
       return res.status(400).send({
         message: "Please provide at least one contact id",
       });
@@ -42,7 +57,6 @@ export const sendSMSController = async (req, res) => {
       contactIds = await filterContactsByTags(contactIds, tags);
     }
 
-
     // Helper function to create a delay
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -54,13 +68,19 @@ export const sendSMSController = async (req, res) => {
       const batchResults = await Promise.all(
         batch.map(async (contact) => {
           try {
+            let messageForContact = message + "";
+            messageForContact = incorporateShortCodes(
+              codesUsed,
+              contact,
+              messageForContact
+            );
             console.log(`Sending SMS to: ${contact.id}`);
             const response = await axios.post(
               "https://services.leadconnectorhq.com/conversations/messages",
               {
                 type: "SMS",
                 contactId: contact.id,
-                message: message,
+                message: messageForContact,
               },
               {
                 headers: {
@@ -83,7 +103,11 @@ export const sendSMSController = async (req, res) => {
 
             const video = await videoModel.findById(videoId);
 
-            return { contactId: contact.id, data: smsHistory, videoName: video.title };
+            return {
+              contactId: contact.id,
+              data: smsHistory,
+              videoName: video.title,
+            };
           } catch (err) {
             const smsHistory = await historyModel.create({
               video: videoId,
@@ -140,9 +164,21 @@ export const sendSMSController = async (req, res) => {
 
 export const sendEmailController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, sendToAll, subject = "Konected - Loom Video", tags } = req.body;
+    let {
+      videoId,
+      contactIds,
+      message,
+      sendToAll,
+      subject = "Konected - Loom Video",
+      tags,
+      codesUsed = [],
+    } = req.body;
 
-    if ((!contactIds || contactIds.length === 0) && sendToAll === false && tags.length === 0) {
+    if (
+      (!contactIds || contactIds.length === 0) &&
+      sendToAll === false &&
+      tags.length === 0
+    ) {
       return res.status(400).send({
         message: "Please provide at least one email id",
       });
@@ -167,8 +203,7 @@ export const sendEmailController = async (req, res) => {
       });
     }
 
-    if (sendToAll == true)
-    {
+    if (sendToAll == true) {
       contactIds = await getAllUserContacts(user, userData, true);
     }
 
@@ -177,98 +212,108 @@ export const sendEmailController = async (req, res) => {
       contactIds = await filterContactsByTags(contactIds, tags);
     }
 
-   // Helper function to create a delay
-   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    // Helper function to create a delay
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-   let results = [];
-   for (let i = 0; i < contactIds.length; i += 100) {
-     const batch = contactIds.slice(i, i + 100);
+    let results = [];
+    for (let i = 0; i < contactIds.length; i += 100) {
+      const batch = contactIds.slice(i, i + 100);
 
-    // Process the current batch
-    const batchResults = await Promise.all(
-      batch.map(async (contact) => {
-        try {
-          console.log(`Sending email to: ${contact.id}`);
-          const response = await axios.post(
-            "https://services.leadconnectorhq.com/conversations/messages",
-            {
-              type: "Email",
-              contactId: contact.id,
-              subject: subject,
-              html: message,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${userData.accessToken}`,
-                Version: "2021-04-15",
-                "Content-Type": "application/json",
-                Accept: "application/json",
+      // Process the current batch
+      const batchResults = await Promise.all(
+        batch.map(async (contact) => {
+          try {
+            let messageForContact = message + "";
+            messageForContact = incorporateShortCodes(
+              codesUsed,
+              contact,
+              messageForContact
+            );
+            console.log(`Sending email to: ${contact.id}`);
+            const response = await axios.post(
+              "https://services.leadconnectorhq.com/conversations/messages",
+              {
+                type: "Email",
+                contactId: contact.id,
+                subject: subject,
+                html: messageForContact,
               },
-            }
-          );
+              {
+                headers: {
+                  Authorization: `Bearer ${userData.accessToken}`,
+                  Version: "2021-04-15",
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                },
+              }
+            );
 
-          const emailHistory = await historyModel.create({
-            video: videoId,
-            contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
-            contactAddress: contact.email,
-            sendType: "email",
-            subject: subject,
-            status: "sent",
-          });
+            const emailHistory = await historyModel.create({
+              video: videoId,
+              contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+              contactAddress: contact.email,
+              sendType: "email",
+              subject: subject,
+              status: "sent",
+            });
 
-          const video = await videoModel.findById(videoId);
+            const video = await videoModel.findById(videoId);
 
-          return { contactId: contact.id, data: emailHistory, videoName: video.title };
-        } catch (err) {
-          const emailHistory = await historyModel.create({
-            video: videoId,
-            contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
-            contactAddress: contact.email,
-            sendType: "email",
-            subject: subject,
-            status: "failed",
-          });
+            return {
+              contactId: contact.id,
+              data: emailHistory,
+              videoName: video.title,
+            };
+          } catch (err) {
+            const emailHistory = await historyModel.create({
+              video: videoId,
+              contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
+              contactAddress: contact.email,
+              sendType: "email",
+              subject: subject,
+              status: "failed",
+            });
 
-          const video = await videoModel.findById(videoId);
+            const video = await videoModel.findById(videoId);
 
-          console.error(
-            `Failed to send email to ${contact.id}:`,
-            err.response?.data || err.message
-          );
-          return {
-            contactId: contact.id,
-            data: emailHistory,
-            videoName: video.title,
-          };
-        }
-      })
-    );
+            console.error(
+              `Failed to send email to ${contact.id}:`,
+              err.response?.data || err.message
+            );
+            return {
+              contactId: contact.id,
+              data: emailHistory,
+              videoName: video.title,
+            };
+          }
+        })
+      );
 
-     results = results.concat(batchResults);
+      results = results.concat(batchResults);
 
-     // Wait 10 seconds before processing the next batch
-     if (i + 100 < contactIds.length) {
-       console.log("Waiting 10 seconds before sending the next batch...");
-       await delay(10000);
-     }
-   }
+      // Wait 10 seconds before processing the next batch
+      if (i + 100 < contactIds.length) {
+        console.log("Waiting 10 seconds before sending the next batch...");
+        await delay(10000);
+      }
+    }
 
-   const failedEmails = results.filter((result) => result.status === "error");
-   if (failedEmails.length > 0) {
-     return res.status(207).send({
-       message: "Some emails failed to send",
-       details: results,
-     });
-   }
+    const failedEmails = results.filter((result) => result.status === "error");
+    if (failedEmails.length > 0) {
+      return res.status(207).send({
+        message: "Some emails failed to send",
+        details: results,
+      });
+    }
 
-   return res.status(200).send({
-     message: "All emails sent successfully",
-     data: results,
-   });
- } catch (error) {
-   console.error("Unexpected error:", error);
-   return res
-     .status(500)
-     .json({ message: "Internal server error", error: error.message });
- }
+    return res.status(200).send({
+      message: "All emails sent successfully",
+      data: results,
+    });
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
 };
