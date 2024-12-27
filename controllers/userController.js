@@ -242,3 +242,132 @@ export const getUserLocationId = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const getUserDomain = async (req, res) => {
+  try {
+    const user = req.user;
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      userLocationId: user.userLocationId,
+    });
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
+    if (userData.userLocationId) {
+      const options = {
+        method: "GET",
+        url: `https://services.leadconnectorhq.com/locations/${userData.userLocationId}`,
+        headers: {
+          Authorization: `Bearer ${userData.accessToken}`,
+          Version: "2021-07-28",
+          Accept: "application/json",
+        },
+      };
+
+      const { data } = await axios.request(options);
+      // console.log("Domain: ", data.location.domain);
+
+      return res.status(200).send({
+        message: "User domain retrieved successfully",
+        userDomain: data.location.domain,
+      });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getUserContactsByTags = async (req, res) => {
+  try {
+    const user = req.user;
+
+    let { tags } = req.query;
+
+    if (!tags) {
+      return res.status(400).send({
+        message: "Tags not found",
+      });
+    }
+
+    // Handle tags as JSON string or array
+    if (typeof tags === "string") {
+      try {
+        tags = JSON.parse(tags); // Attempt to parse if it's a JSON string
+      } catch {
+        tags = tags.split(",").map((tag) => tag.trim()); // Fallback to comma-separated string
+      }
+    }
+
+    if (!Array.isArray(tags)) {
+      return res.status(400).send({
+        message: "Tags must be an array or a comma-separated string",
+      });
+    }
+
+    if (tags.length === 0) {
+      return res.status(400).send({
+        message: "Tags array cannot be empty",
+      });
+    }
+
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      userLocationId: user.userLocationId,
+    });
+
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
+    let filters = [
+      {
+        group: "OR",
+        filters: [
+          {
+            field: "tags",
+            operator: "eq",
+            value: tags,
+          },
+        ],
+      },
+    ];
+
+    const options = {
+      method: "POST",
+      url: "https://services.leadconnectorhq.com/contacts/search",
+      headers: {
+        Authorization: `Bearer ${userData.accessToken}`,
+        Version: process.env.GHL_API_VERSION,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      data: {
+        locationId: user.userLocationId,
+        page: 1,
+        pageLimit: 20,
+        filters: filters,
+      },
+    };
+
+    const { data } = await axios.request(options);
+
+    const retrievedContacts = data.contacts.map((contact) => ({
+      name: contact.firstNameLowerCase + " " + contact.lastNameLowerCase,
+      email: contact.email,
+      phone: contact.phone,
+    }));
+
+    return res.status(200).send({
+      message: "Contacts retrieved successfully",
+      contacts: retrievedContacts,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ message: error.message });
+  }
+};

@@ -1,11 +1,12 @@
 import { Router } from "express";
-import 
-{ 
-    decryptUserToken,
-    getUserContacts,
-    getUserHistories,
-    getUserTags,
-    getUserLocationId
+import {
+  decryptUserToken,
+  getUserContacts,
+  getUserHistories,
+  getUserTags,
+  getUserLocationId,
+  getUserDomain,
+  getUserContactsByTags,
 } from "../controllers/userController.js";
 
 export const userRoutes = Router();
@@ -18,13 +19,39 @@ import { verifyAccessToken } from "../middlewares/refreshAccessToken.js";
 userRoutes.post("/decryptUserToken", decryptUserToken);
 
 //Get User Contacts
-userRoutes.post("/getUserContacts", authenticateToken, verifyAccessToken, getUserContacts);
+userRoutes.post(
+  "/getUserContacts",
+  authenticateToken,
+  verifyAccessToken,
+  getUserContacts
+);
 
 //Get User Histories
 userRoutes.get("/getUserHistories", authenticateToken, getUserHistories);
 
 //Get User Tags
-userRoutes.get("/getUserTags", authenticateToken, verifyAccessToken, getUserTags);
+userRoutes.get(
+  "/getUserTags",
+  authenticateToken,
+  verifyAccessToken,
+  getUserTags
+);
 
 //Get User Location Id
 userRoutes.get("/getUserLocationId", authenticateToken, getUserLocationId);
+
+//Get User Domain
+userRoutes.get(
+  "/getUserDomain",
+  authenticateToken,
+  verifyAccessToken,
+  getUserDomain
+);
+
+//Get User Contacts by Tags
+userRoutes.get(
+  "/getUserContactsByTags",
+  authenticateToken,
+  verifyAccessToken,
+  getUserContactsByTags
+);
