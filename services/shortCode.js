@@ -34,7 +34,11 @@ export const incorporateShortCodes = (
     } else if (code == "{{contact.postal_code}}") {
       replacement = contact.postalCode || "";
     } else if (code == "{{contact.date_of_birth}}") {
-      replacement = contact.dateOfBirth || "";
+      if (contact.dateOfBirth) {
+        const date = new Date(contact.dateOfBirth); // Format the date as needed
+        const formattedDate = date.toISOString().split("T")[0]; // Outputs in 'YYYY-MM-DD'
+        replacement = formattedDate;
+      }
     } else if (code == "{{contact.source}}") {
       replacement = contact.source || "";
     }
