@@ -371,3 +371,40 @@ export const getUserContactsByTags = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const getCustomFields = async (req, res) => {
+  try {
+    const user = req.user;
+
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      userLocationId: user.userLocationId,
+    });
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
+    const options = {
+      method: "GET",
+      url: `https://services.leadconnectorhq.com/locations/${user.userLocationId}/customFields`,
+      headers: {
+        Authorization: `Bearer ${userData.accessToken}`,
+        Version: process.env.GHL_API_VERSION,
+        Accept: "application/json",
+      },
+      params: { model: "contact" },
+    };
+
+    const { data } = await axios.request(options);
+
+    return res.status(200).send({
+      message: "Custom fields retrieved successfully",
+      customFields: data.customFields,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ message: error.message });
+  }
+};

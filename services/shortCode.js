@@ -1,7 +1,13 @@
-export const incorporateShortCodes = (codesUsed, contact, message) => {
+export const incorporateShortCodes = (
+  codesUsed,
+  customFieldsUsed,
+  contact,
+  message
+) => {
   for (let i = 0; i < codesUsed.length; i++) {
     const code = codesUsed[i];
     let replacement = "";
+
     if (code == "{{contact.name}}") {
       replacement =
         (contact.firstNameLowerCase || "") +
@@ -31,11 +37,27 @@ export const incorporateShortCodes = (codesUsed, contact, message) => {
       replacement = contact.dateOfBirth || "";
     } else if (code == "{{contact.source}}") {
       replacement = contact.source || "";
-    } else if (code == "{{contact.id}}") {
-      replacement = contact.id || "";
     }
+
     const regex = new RegExp(code, "g");
     message = message.replace(regex, replacement);
   }
+
+  for (let i = 0; i < customFieldsUsed.length; i++) {
+    const customField = customFieldsUsed[i];
+    let customFieldValue = "";
+
+    const actualField = contact.customFields.find(
+      (field) => field.id === customField.id
+    );
+
+    if (actualField) {
+      customFieldValue = actualField.value;
+    }
+
+    const regex = new RegExp(customField.name, "g");
+    message = message.replace(regex, customFieldValue);
+  }
+
   return message;
 };

@@ -7,6 +7,7 @@ import {
   getUserLocationId,
   getUserDomain,
   getUserContactsByTags,
+  getCustomFields,
 } from "../controllers/userController.js";
 
 export const userRoutes = Router();
@@ -54,4 +55,12 @@ userRoutes.get(
   authenticateToken,
   verifyAccessToken,
   getUserContactsByTags
+);
+
+// Get Custom Fields of User
+userRoutes.get(
+  "/getUserCustomFields",
+  authenticateToken,
+  verifyAccessToken,
+  getCustomFields
 );

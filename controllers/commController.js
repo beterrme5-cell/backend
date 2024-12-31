@@ -172,6 +172,7 @@ export const sendEmailController = async (req, res) => {
       subject = "Konected - Loom Video",
       tags,
       codesUsed = [],
+      customFieldsUsed = [],
     } = req.body;
 
     if (
@@ -226,6 +227,7 @@ export const sendEmailController = async (req, res) => {
             let messageForContact = message + "";
             messageForContact = incorporateShortCodes(
               codesUsed,
+              customFieldsUsed,
               contact,
               messageForContact
             );
