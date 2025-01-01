@@ -408,3 +408,46 @@ export const getCustomFields = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const updateUserDomain = async (req, res) => {
+  try {
+    const user = req.user;
+    const { domain } = req.body;
+
+    if (!domain) {
+      return res.status(400).send({
+        message: "Domain not found",
+      });
+    }
+
+    if (typeof domain !== "string") {
+      return res.status(400).send({
+        message: "Domain must be a string",
+      });
+    }
+
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      userLocationId: user.userLocationId,
+    });
+
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
+    userData.domain = domain;
+
+    await userData.save();
+
+    return res.status(201).send({
+      message: "Domain updated successfully",
+    });
+
+  }
+  catch (error) {
+    console.log(error);
+    res.status(400).json({ message: error.message });
+  }
+};
