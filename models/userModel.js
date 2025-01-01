@@ -48,6 +48,11 @@ const userSchema = new Schema(
       type: String,
     },
 
+    domain: {
+      type: String,
+      default: "",
+    },
+
   },
   { timestamps: true }
 );
