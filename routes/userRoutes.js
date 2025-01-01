@@ -8,6 +8,7 @@ import {
   getUserDomain,
   getUserContactsByTags,
   getCustomFields,
+  updateUserDomain,
 } from "../controllers/userController.js";
 
 export const userRoutes = Router();
@@ -63,4 +64,12 @@ userRoutes.get(
   authenticateToken,
   verifyAccessToken,
   getCustomFields
+);
+
+// Update User Domain
+userRoutes.patch(
+  "/updateUserDomain",
+  authenticateToken,
+  verifyAccessToken,
+  updateUserDomain
 );

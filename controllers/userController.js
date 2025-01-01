@@ -256,25 +256,11 @@ export const getUserDomain = async (req, res) => {
       });
     }
 
-    if (userData.userLocationId) {
-      const options = {
-        method: "GET",
-        url: `https://services.leadconnectorhq.com/locations/${userData.userLocationId}`,
-        headers: {
-          Authorization: `Bearer ${userData.accessToken}`,
-          Version: "2021-07-28",
-          Accept: "application/json",
-        },
-      };
-
-      const { data } = await axios.request(options);
-      // console.log("Domain: ", data.location.domain);
-
-      return res.status(200).send({
-        message: "User domain retrieved successfully",
-        userDomain: data.location.domain,
-      });
-    }
+    return res.status(200).send({
+      message: "User domain retrieved successfully",
+      userDomain: userData.domain,
+    });
+    
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -404,6 +390,49 @@ export const getCustomFields = async (req, res) => {
       customFields: data.customFields,
     });
   } catch (error) {
+    console.log(error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateUserDomain = async (req, res) => {
+  try {
+    const user = req.user;
+    const { domain } = req.body;
+
+    if (!domain) {
+      return res.status(400).send({
+        message: "Domain not found",
+      });
+    }
+
+    if (typeof domain !== "string") {
+      return res.status(400).send({
+        message: "Domain must be a string",
+      });
+    }
+
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      userLocationId: user.userLocationId,
+    });
+
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
+    userData.domain = domain;
+
+    await userData.save();
+
+    return res.status(201).send({
+      message: "Domain updated successfully",
+    });
+
+  }
+  catch (error) {
     console.log(error);
     res.status(400).json({ message: error.message });
   }
