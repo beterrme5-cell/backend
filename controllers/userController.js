@@ -256,25 +256,11 @@ export const getUserDomain = async (req, res) => {
       });
     }
 
-    if (userData.userLocationId) {
-      const options = {
-        method: "GET",
-        url: `https://services.leadconnectorhq.com/locations/${userData.userLocationId}`,
-        headers: {
-          Authorization: `Bearer ${userData.accessToken}`,
-          Version: "2021-07-28",
-          Accept: "application/json",
-        },
-      };
-
-      const { data } = await axios.request(options);
-      // console.log("Domain: ", data.location.domain);
-
-      return res.status(200).send({
-        message: "User domain retrieved successfully",
-        userDomain: data.location.domain,
-      });
-    }
+    return res.status(200).send({
+      message: "User domain retrieved successfully",
+      userDomain: userData.domain,
+    });
+    
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
