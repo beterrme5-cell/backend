@@ -84,7 +84,7 @@ export const callback = async (req, res) => {
     if (domain && domain !== "") 
     {
       
-      if (locationId && locationId == "") 
+      if (locationId == "") 
       {
         return res.redirect(
           `https://${domain}`
@@ -98,7 +98,7 @@ export const callback = async (req, res) => {
       }
     }
 
-    if (locationId && locationId == "") 
+    if (locationId == "") 
     {
       return res.redirect(
         `https://app.gohighlevel.com`
