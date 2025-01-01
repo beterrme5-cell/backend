@@ -35,8 +35,31 @@ export const callback = async (req, res) => {
     const scope = response.data.scope;
     const companyId = response.data.companyId;
 
+
     var expiryDate = new Date();
     expiryDate.setSeconds(expiryDate.getSeconds() + (expires_in - 60));
+
+    let domain = "";
+
+    if (locationId == "") {
+      const options = {
+        method: 'GET',
+        url: 'https://services.leadconnectorhq.com/companies/ve9EPM428h8vShlRW1KT',
+        headers: {Authorization: 'Bearer 123', Version: '2021-07-28', Accept: 'application/json'}
+      };
+
+      const { data } = await axios.request(options);
+
+      domain = data?.company?.domain;
+    }
+    else
+    {
+      const agencyAccount = await userModel.findOne({ companyId: companyId, userLocationId: "" });
+
+      if (agencyAccount) {
+        domain = agencyAccount?.domain;
+      }
+    }
 
     await userModel.findOneAndUpdate(
       { accountId: userId, userLocationId: locationId },
@@ -50,6 +73,7 @@ export const callback = async (req, res) => {
           scope: scope,
           companyId: companyId,
           userCode: req.query.code,
+          domain: domain
         },
       },
       { new: true, upsert: true } // Upsert option added
