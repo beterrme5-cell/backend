@@ -41,10 +41,11 @@ export const callback = async (req, res) => {
 
     let domain = "";
 
-    if (locationId == "") {
+    if (companyId && locationId == "") 
+    {
       const options = {
         method: 'GET',
-        url: 'https://services.leadconnectorhq.com/companies/ve9EPM428h8vShlRW1KT',
+        url: `https://services.leadconnectorhq.com/companies/${companyId}`,
         headers: {Authorization: 'Bearer 123', Version: '2021-07-28', Accept: 'application/json'}
       };
 
