@@ -46,7 +46,7 @@ export const callback = async (req, res) => {
       const options = {
         method: 'GET',
         url: `https://services.leadconnectorhq.com/companies/${companyId}`,
-        headers: {Authorization: 'Bearer 123', Version: '2021-07-28', Accept: 'application/json'}
+        headers: {Authorization: `Bearer ${access_token}`, Version: '2021-07-28', Accept: 'application/json'}
       };
 
       const { data } = await axios.request(options);
