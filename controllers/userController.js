@@ -401,12 +401,6 @@ export const updateUserDomain = async (req, res) => {
     const user = req.user;
     const { domain, showDomainPopup } = req.body;
 
-    if (!domain) {
-      return res.status(400).send({
-        message: "Domain not found",
-      });
-    }
-
     if (typeof domain !== "string") {
       return res.status(400).send({
         message: "Domain must be a string",
