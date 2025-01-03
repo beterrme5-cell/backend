@@ -53,6 +53,11 @@ const userSchema = new Schema(
       default: "",
     },
 
+    showDomainPopup: {
+      type: Boolean,
+      default: false,
+    },
+
   },
   { timestamps: true }
 );

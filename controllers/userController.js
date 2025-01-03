@@ -259,6 +259,7 @@ export const getUserDomain = async (req, res) => {
     return res.status(200).send({
       message: "User domain retrieved successfully",
       userDomain: userData.domain,
+      showDomainPopup: userData.showDomainPopup,
     });
     
   } catch (error) {
