@@ -74,7 +74,8 @@ export const callback = async (req, res) => {
           scope: scope,
           companyId: companyId,
           userCode: req.query.code,
-          domain: domain
+          domain: domain,
+          showDomainPopup: domain == "" ? true : false
         },
       },
       { new: true, upsert: true } // Upsert option added
