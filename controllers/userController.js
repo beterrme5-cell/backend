@@ -399,7 +399,7 @@ export const getCustomFields = async (req, res) => {
 export const updateUserDomain = async (req, res) => {
   try {
     const user = req.user;
-    const { domain } = req.body;
+    const { domain, showDomainPopup } = req.body;
 
     if (!domain) {
       return res.status(400).send({
@@ -425,6 +425,7 @@ export const updateUserDomain = async (req, res) => {
     }
 
     userData.domain = domain;
+    userData.showDomainPopup = showDomainPopup;
 
     await userData.save();
 
