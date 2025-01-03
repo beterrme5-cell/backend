@@ -399,13 +399,7 @@ export const getCustomFields = async (req, res) => {
 export const updateUserDomain = async (req, res) => {
   try {
     const user = req.user;
-    const { domain } = req.body;
-
-    if (!domain) {
-      return res.status(400).send({
-        message: "Domain not found",
-      });
-    }
+    const { domain, showDomainPopup } = req.body;
 
     if (typeof domain !== "string") {
       return res.status(400).send({
@@ -425,6 +419,7 @@ export const updateUserDomain = async (req, res) => {
     }
 
     userData.domain = domain;
+    userData.showDomainPopup = showDomainPopup;
 
     await userData.save();
 
