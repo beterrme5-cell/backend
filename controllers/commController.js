@@ -6,7 +6,6 @@ import {
   getAllUserContacts,
   filterContactsByTags,
 } from "../services/contactRetrieval.js";
-import { incorporateShortCodes } from "../services/shortCode.js";
 export const sendSMSController = async (req, res) => {
   try {
     let {
@@ -15,7 +14,6 @@ export const sendSMSController = async (req, res) => {
       message,
       sendToAll,
       tags,
-      codesUsed = [],
     } = req.body;
 
     if (
@@ -68,11 +66,6 @@ export const sendSMSController = async (req, res) => {
         batch.map(async (contact) => {
           try {
             let messageForContact = message + "";
-            messageForContact = incorporateShortCodes(
-              codesUsed,
-              contact,
-              messageForContact
-            );
             console.log(`Sending SMS to: ${contact.id}`);
             const response = await axios.post(
               "https://services.leadconnectorhq.com/conversations/messages",
@@ -170,8 +163,6 @@ export const sendEmailController = async (req, res) => {
       sendToAll,
       subject = "Konected - Loom Video",
       tags,
-      codesUsed = [],
-      customFieldsUsed = [],
     } = req.body;
 
     if (
@@ -224,12 +215,6 @@ export const sendEmailController = async (req, res) => {
         batch.map(async (contact) => {
           try {
             let messageForContact = message + "";
-            messageForContact = incorporateShortCodes(
-              codesUsed,
-              customFieldsUsed,
-              contact,
-              messageForContact
-            );
             console.log(`Sending email to: ${contact.id}`);
             const response = await axios.post(
               "https://services.leadconnectorhq.com/conversations/messages",
