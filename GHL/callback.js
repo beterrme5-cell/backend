@@ -27,6 +27,8 @@ export const callback = async (req, res) => {
       }
     );
 
+    console.log("Response => Callback: ", response.data);
+
     const locationId = response.data.locationId ? response.data.locationId : "";
     const userId = response.data.userId;
     const access_token = response.data.access_token;
@@ -35,27 +37,30 @@ export const callback = async (req, res) => {
     const scope = response.data.scope;
     const companyId = response.data.companyId;
 
-
     var expiryDate = new Date();
     expiryDate.setSeconds(expiryDate.getSeconds() + (expires_in - 60));
 
     let domain = "";
 
-    if (companyId && locationId == "") 
-    {
+    if (companyId && locationId == "") {
       const options = {
-        method: 'GET',
+        method: "GET",
         url: `https://services.leadconnectorhq.com/companies/${companyId}`,
-        headers: {Authorization: `Bearer ${access_token}`, Version: '2021-07-28', Accept: 'application/json'}
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Version: "2021-07-28",
+          Accept: "application/json",
+        },
       };
 
       const { data } = await axios.request(options);
 
       domain = data?.company?.domain;
-    }
-    else
-    {
-      const agencyAccount = await userModel.findOne({ companyId: companyId, userLocationId: "" });
+    } else {
+      const agencyAccount = await userModel.findOne({
+        companyId: companyId,
+        userLocationId: "",
+      });
 
       if (agencyAccount) {
         domain = agencyAccount?.domain;
@@ -75,44 +80,27 @@ export const callback = async (req, res) => {
           companyId: companyId,
           userCode: req.query.code,
           domain: domain,
-          showDomainPopup: domain == "" ? true : false
+          showDomainPopup: domain == "" ? true : false,
         },
       },
       { new: true, upsert: true } // Upsert option added
     );
 
-
-    if (domain && domain !== "") 
-    {
-      
-      if (locationId == "") 
-      {
-        return res.redirect(
-          `https://${domain}`
-        )
-      }
-      else
-      {
-        return res.redirect(
-          `https://${domain}/location/${locationId}`
-        );
+    if (domain && domain !== "") {
+      if (locationId == "") {
+        return res.redirect(`https://${domain}`);
+      } else {
+        return res.redirect(`https://${domain}/location/${locationId}`);
       }
     }
 
-    if (locationId == "") 
-    {
-      return res.redirect(
-        `https://app.gohighlevel.com`
-      );
-    }
-    else
-    {
+    if (locationId == "") {
+      return res.redirect(`https://app.gohighlevel.com`);
+    } else {
       return res.redirect(
         `https://app.gohighlevel.com/v2/location/${locationId}`
       );
     }
-
-
   } catch (error) {
     console.error("Error during API call:", error);
   }

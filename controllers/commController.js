@@ -8,13 +8,7 @@ import {
 } from "../services/contactRetrieval.js";
 export const sendSMSController = async (req, res) => {
   try {
-    let {
-      videoId,
-      contactIds,
-      message,
-      sendToAll,
-      tags,
-    } = req.body;
+    let { videoId, contactIds, message, sendToAll, tags } = req.body;
 
     if (
       (!contactIds || contactIds.length === 0) &&
@@ -36,6 +30,7 @@ export const sendSMSController = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
 
@@ -185,6 +180,7 @@ export const sendEmailController = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
 

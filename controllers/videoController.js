@@ -7,12 +7,11 @@ export const saveNewVideo = async (req, res) => {
   try {
     const { title, embeddedLink, shareableLink } = req.body;
 
-    console.log("Video Title:", title);
-
     const user = req.user;
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
 
@@ -94,6 +93,7 @@ export const deleteVideo = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
     if (!userData) {
@@ -131,6 +131,7 @@ export const getVideosByAccountId = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
     if (!userData) {

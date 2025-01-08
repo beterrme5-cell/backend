@@ -18,6 +18,7 @@ export const decryptUserToken = async (req, res) => {
     if (decryptedData.userId) {
       const user = await userModel.findOne({
         accountId: decryptedData.userId,
+        companyId: decryptedData.companyId,
         userLocationId: decryptedData.activeLocation
           ? decryptedData.activeLocation
           : "",
@@ -38,7 +39,46 @@ export const decryptUserToken = async (req, res) => {
           accessToken: token,
         });
       } else {
-        return res.redirect("http://localhost:8000/oauth/callback");
+        const user = await userModel.findOne({
+          companyId: decryptedData.companyId,
+          userLocationId: decryptedData.activeLocation
+            ? decryptedData.activeLocation
+            : "",
+        });
+
+        if (user) {
+          const newUserProfile = await userModel.create({
+            accountId: decryptedData.userId,
+            userLocationId: decryptedData.activeLocation
+              ? decryptedData.activeLocation
+              : "",
+            companyId: decryptedData.companyId,
+            domain: user.domain,
+            accessToken: user.accessToken,
+            refreshToken: user.refreshToken,
+            expiryDate: user.expiryDate,
+            scope: user.scope,
+            showDomainPopup: user.showDomainPopup,
+            userCode: user.userCode,
+            accountEmail: decryptedData.email,
+          });
+
+          const token = generateToken(newUserProfile);
+
+          return res.status(200).send({
+            message: "User token decrypted successfully",
+            user: {
+              accountId: newUserProfile.accountId,
+              companyId: newUserProfile.companyId,
+              userLocationId: newUserProfile.userLocationId,
+            },
+            accessToken: token,
+          });
+        } else {
+          return res.status(400).send({
+            message: "User not found",
+          });
+        }
       }
     } else {
       return res.status(400).send({
@@ -46,6 +86,7 @@ export const decryptUserToken = async (req, res) => {
       });
     }
   } catch (error) {
+    console.log("decryptUserToken error => ", error);
     res.status(400).json({ message: error.message });
   }
 };
@@ -57,6 +98,7 @@ export const getUserContacts = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
     if (!userData) {
@@ -137,6 +179,7 @@ export const getUserHistories = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
 
@@ -192,6 +235,7 @@ export const getUserTags = async (req, res) => {
     // console.log(user);
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
     if (!userData) {
@@ -226,6 +270,7 @@ export const getUserLocationId = async (req, res) => {
     const user = req.user;
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
     if (!userData) {
@@ -248,6 +293,7 @@ export const getUserDomain = async (req, res) => {
     const user = req.user;
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
     if (!userData) {
@@ -261,7 +307,6 @@ export const getUserDomain = async (req, res) => {
       userDomain: userData.domain,
       showDomainPopup: userData.showDomainPopup,
     });
-    
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -302,6 +347,7 @@ export const getUserContactsByTags = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
 
@@ -365,6 +411,7 @@ export const getCustomFields = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
     if (!userData) {
@@ -409,6 +456,7 @@ export const updateUserDomain = async (req, res) => {
 
     const userData = await userModel.findOne({
       accountId: user.accountId,
+      companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
 
@@ -426,9 +474,7 @@ export const updateUserDomain = async (req, res) => {
     return res.status(201).send({
       message: "Domain updated successfully",
     });
-
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
     res.status(400).json({ message: error.message });
   }
