@@ -39,7 +39,6 @@ app.use("/api/video", videoRoutes);
 // Generate JWT for Loom SDK
 app.get("/setup", async (_, res) => {
   const privateKey = process.env.PEM_FILE_KEY.replace(/\\n/g, "\n");
-
   // Load private key from PEM
   const pk = await jose.importPKCS8(privateKey, "RS256");
 
