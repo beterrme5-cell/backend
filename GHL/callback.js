@@ -97,6 +97,20 @@ export const callback = async (req, res) => {
     if (locationId == "") {
       return res.redirect(`https://app.gohighlevel.com`);
     } else {
+
+      const options = {
+        method: 'GET',
+        url: 'https://services.leadconnectorhq.com/medias/files',
+        params: {sortBy: 'createdAt', sortOrder: 'asc', altType: 'location', altId: locationId, limit: "10"},
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Version: '2021-07-28',
+          Accept: 'application/json'
+        }
+      };
+      
+        const { data } = await axios.request(options);
+
       return res.redirect(
         `https://app.gohighlevel.com/v2/location/${locationId}`
       );

@@ -26,7 +26,7 @@ videoRoutes.put("/updateVideo", authenticateToken, updateVideo);
 videoRoutes.delete("/deleteVideo/:videoId", authenticateToken, deleteVideo);
 
 //Get all videos by account id
-videoRoutes.get("/getVideosByAccountId", authenticateToken, getVideosByAccountId);
+videoRoutes.get("/getVideosByAccountId", authenticateToken, verifyAccessToken, getVideosByAccountId);
 
 //Get all videos
 videoRoutes.get("/getAllVideos", authenticateToken, getAllVideos);
