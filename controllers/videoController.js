@@ -1,3 +1,4 @@
+import axios from "axios";
 import videoModel from "../models/videoModel.js";
 import userModel from "../models/userModel.js";
 import { fetchThumbnailURL } from "../services/fetchThumbnailURL.js";
@@ -139,11 +140,42 @@ export const getVideosByAccountId = async (req, res) => {
         message: "User not found",
       });
     }
-    const videos = await videoModel.find({ creator: userData._id });
+    const recordedVideos = await videoModel.find({ creator: userData._id });
+
+    const options = {
+      method: 'GET',
+      url: 'https://services.leadconnectorhq.com/medias/files',
+      params: {sortBy: 'createdAt', sortOrder: 'asc', altType: 'location', altId: userData.userLocationId},
+      headers: {
+        Authorization: `Bearer ${userData.accessToken}`,
+        Version: '2021-07-28',
+        Accept: 'application/json'
+      }
+    };
+    
+      const { data } = await axios.request(options);
+      let uploadedVideos = [];
+
+      if (data && data.files)
+      {
+         uploadedVideos = data.files
+        .filter(file => file.contentType.startsWith('video'))
+        .map(file => ({
+          title: file.name,      
+          description: "",         
+          embeddedLink: file.url,  
+          shareableLink: file.url,
+          thumbnailURL: "",
+          createdAt: file.createdAt,
+          updatedAt: file.updatedAt   
+        }));
+      }
+
 
     res.status(200).send({
       message: "Videos retrieved successfully",
-      videos,
+      recordedVideos,
+      uploadedVideos
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
