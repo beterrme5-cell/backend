@@ -1,3 +1,4 @@
+import axios from "axios";
 import videoModel from "../models/videoModel.js";
 import userModel from "../models/userModel.js";
 import { fetchThumbnailURL } from "../services/fetchThumbnailURL.js";
