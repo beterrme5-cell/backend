@@ -14,6 +14,7 @@ export const initiate = async (req, res) => {
       "locations/tags.readonly",
       "locations/customFields.readonly",
       "companies.readonly",
+      "medias.readonly",
     ],
   };
 
