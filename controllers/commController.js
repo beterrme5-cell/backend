@@ -40,6 +40,14 @@ export const sendSMSController = async (req, res) => {
       });
     }
 
+    const video = await videoModel.findById(videoId);
+
+    if (!video) {
+      return res.status(400).send({
+        message: "Video not found",
+      });
+    }
+
     if (sendToAll === true) {
       contactIds = await getAllUserContacts(user, userData, false);
     }
@@ -68,6 +76,7 @@ export const sendSMSController = async (req, res) => {
                 type: "SMS",
                 contactId: contact.id,
                 message: messageForContact,
+                attachments: [video.thumbnailURL],
               },
               {
                 headers: {
