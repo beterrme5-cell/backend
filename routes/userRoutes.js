@@ -21,7 +21,7 @@ import { verifyAccessToken } from "../middlewares/refreshAccessToken.js";
 userRoutes.post("/decryptUserToken", decryptUserToken);
 
 //Get User Contacts
-userRoutes.post(
+userRoutes.get(
   "/getUserContacts",
   authenticateToken,
   verifyAccessToken,
