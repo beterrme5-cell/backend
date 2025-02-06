@@ -8,7 +8,7 @@ import {
 } from "../services/contactRetrieval.js";
 export const sendSMSController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, sendToAll, tags } = req.body;
+    let { videoId, contactIds, message, sendToAll, tags, sendAttachment } = req.body;
 
     if (
       (!contactIds || contactIds.length === 0) &&
@@ -26,6 +26,12 @@ export const sendSMSController = async (req, res) => {
       });
     }
 
+    if (typeof sendAttachment !== "boolean") {
+      return res.status(400).send({
+        message: "sendAttachment must be a boolean",
+      });
+    }
+
     const user = req.user;
 
     const userData = await userModel.findOne({
@@ -37,6 +43,14 @@ export const sendSMSController = async (req, res) => {
     if (!userData) {
       return res.status(400).send({
         message: "User not found",
+      });
+    }
+
+    const video = await videoModel.findById(videoId);
+
+    if (!video) {
+      return res.status(400).send({
+        message: "Video not found",
       });
     }
 
@@ -68,6 +82,7 @@ export const sendSMSController = async (req, res) => {
                 type: "SMS",
                 contactId: contact.id,
                 message: messageForContact,
+              ...(sendAttachment && { attachments: [video.thumbnailURL] }),
               },
               {
                 headers: {

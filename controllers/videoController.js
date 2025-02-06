@@ -189,7 +189,7 @@ export const getVideoById = async (req, res) => {
     const video = await videoModel.findById(id);
 
     if (!video) {
-      return res.status(404).send({
+      return res.status(400).send({
         message: "Video not found",
       });
     }

@@ -93,7 +93,6 @@ export const decryptUserToken = async (req, res) => {
 
 export const getUserContacts = async (req, res) => {
   try {
-    const { page = 1, pageLimit = 10, search } = req.body;
     const user = req.user;
 
     const userData = await userModel.findOne({
@@ -106,66 +105,55 @@ export const getUserContacts = async (req, res) => {
         message: "User not found",
       });
     }
+      // Start fetching contacts, starting with page 1
+      let allContacts = [];
+      let currentPage = 1;
+      let hasMoreContacts = true;
 
-    if (search && search !== "" && search.length < 3) {
-      return res.status(400).send({
-        message: "Search query must be at least 3 characters",
-      });
-    }
+      // Helper function to create a delay
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  
+      while (hasMoreContacts) {
+        // Set pageLimit to 100 for each request
+        const response = await axios.request({
+          method: "POST",
+          url: "https://services.leadconnectorhq.com/contacts/search",
+          headers: {
+            Authorization: `Bearer ${userData.accessToken}`,
+            Version: process.env.GHL_API_VERSION,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          data: {
+            locationId: user.userLocationId,
+            page: currentPage,
+            pageLimit: 100,
+          },
+        });
+  
+        const data = response.data;
+        const contacts = data.contacts || [];
+  
+        // Add fetched contacts to the list
+        allContacts = [...allContacts, ...contacts];
+  
+        // Check if there are more contacts to fetch (based on the total number of contacts and page limit)
+        if (currentPage * 100 >= data.total) {
+          hasMoreContacts = false;
+        }
 
-    let filters =
-      search && search !== ""
-        ? [
-            {
-              group: "OR",
-              filters: [
-                {
-                  field: "firstNameLowerCase",
-                  operator: "contains",
-                  value: search,
-                },
-                {
-                  field: "lastNameLowerCase",
-                  operator: "contains",
-                  value: search,
-                },
-                {
-                  field: "email",
-                  operator: "contains",
-                  value: search,
-                },
-                {
-                  field: "phone",
-                  operator: "contains",
-                  value: search,
-                },
-              ],
-            },
-          ]
-        : [];
+        // Wait 10 seconds before processing the next batch
+        if (currentPage % 50 === 0 && currentPage !== 1) {
+          console.log("Waiting 10 seconds before sending the next batch...");
+          await delay(10000);
+        }
 
-    const options = {
-      method: "POST",
-      url: "https://services.leadconnectorhq.com/contacts/search",
-      headers: {
-        Authorization: `Bearer ${userData.accessToken}`,
-        Version: process.env.GHL_API_VERSION,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      data: {
-        locationId: user.userLocationId,
-        page: page,
-        pageLimit: pageLimit,
-        filters: filters,
-      },
-    };
-
-    const { data } = await axios.request(options);
+        currentPage++; // Move to the next page
+      }
 
     return res.status(200).send({
       message: "Contacts retrieved successfully",
-      contacts: data,
+      contacts: allContacts,
     });
   } catch (error) {
     console.log(error);
