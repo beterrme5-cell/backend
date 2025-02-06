@@ -8,7 +8,7 @@ import {
 } from "../services/contactRetrieval.js";
 export const sendSMSController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, sendToAll, tags } = req.body;
+    let { videoId, contactIds, message, sendToAll, tags, sendAttachment } = req.body;
 
     if (
       (!contactIds || contactIds.length === 0) &&
@@ -23,6 +23,12 @@ export const sendSMSController = async (req, res) => {
     if (!message) {
       return res.status(400).send({
         message: "Message is required",
+      });
+    }
+
+    if (typeof sendAttachment !== "boolean") {
+      return res.status(400).send({
+        message: "sendAttachment must be a boolean",
       });
     }
 
@@ -76,7 +82,7 @@ export const sendSMSController = async (req, res) => {
                 type: "SMS",
                 contactId: contact.id,
                 message: messageForContact,
-                attachments: [video.thumbnailURL],
+              ...(sendAttachment && { attachments: [video.thumbnailURL] }),
               },
               {
                 headers: {
