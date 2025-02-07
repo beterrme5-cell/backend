@@ -8,11 +8,10 @@ import {
 } from "../services/contactRetrieval.js";
 export const sendSMSController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, sendToAll, tags, sendAttachment } = req.body;
+    let { videoId, contactIds, message, tags, sendAttachment } = req.body;
 
     if (
       (!contactIds || contactIds.length === 0) &&
-      sendToAll === false &&
       tags.length === 0
     ) {
       return res.status(400).send({
@@ -52,10 +51,6 @@ export const sendSMSController = async (req, res) => {
       return res.status(400).send({
         message: "Video not found",
       });
-    }
-
-    if (sendToAll === true) {
-      contactIds = await getAllUserContacts(user, userData, false);
     }
 
     if (tags && tags.length > 0) {
@@ -103,8 +98,6 @@ export const sendSMSController = async (req, res) => {
               status: "sent",
             });
 
-            const video = await videoModel.findById(videoId);
-
             return {
               contactId: contact.id,
               data: smsHistory,
@@ -120,7 +113,7 @@ export const sendSMSController = async (req, res) => {
               status: "failed",
             });
 
-            const video = await videoModel.findById(videoId);
+            let associatedVideo = await videoModel.findById(videoId);
 
             console.error(
               `Failed to send SMS to ${contact.id}:`,
@@ -129,7 +122,7 @@ export const sendSMSController = async (req, res) => {
             return {
               contactId: contact.id,
               data: smsHistory,
-              videoName: video.title,
+              videoName: associatedVideo.title,
             };
           }
         })
@@ -170,14 +163,12 @@ export const sendEmailController = async (req, res) => {
       videoId,
       contactIds,
       message,
-      sendToAll,
       subject = "Konected - Loom Video",
       tags,
     } = req.body;
 
     if (
       (!contactIds || contactIds.length === 0) &&
-      sendToAll === false &&
       tags.length === 0
     ) {
       return res.status(400).send({
@@ -205,8 +196,12 @@ export const sendEmailController = async (req, res) => {
       });
     }
 
-    if (sendToAll == true) {
-      contactIds = await getAllUserContacts(user, userData, true);
+    const video = await videoModel.findById(videoId);
+
+    if (!video) {
+      return res.status(400).send({
+        message: "Video not found",
+      });
     }
 
     if (tags && tags.length > 0) {
@@ -254,8 +249,6 @@ export const sendEmailController = async (req, res) => {
               status: "sent",
             });
 
-            const video = await videoModel.findById(videoId);
-
             return {
               contactId: contact.id,
               data: emailHistory,
@@ -271,7 +264,7 @@ export const sendEmailController = async (req, res) => {
               status: "failed",
             });
 
-            const video = await videoModel.findById(videoId);
+            let associatedVideo = await videoModel.findById(videoId);
 
             console.error(
               `Failed to send email to ${contact.id}:`,
@@ -280,7 +273,7 @@ export const sendEmailController = async (req, res) => {
             return {
               contactId: contact.id,
               data: emailHistory,
-              videoName: video.title,
+              videoName: associatedVideo.title,
             };
           }
         })
