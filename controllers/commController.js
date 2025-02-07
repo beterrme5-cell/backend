@@ -98,8 +98,6 @@ export const sendSMSController = async (req, res) => {
               status: "sent",
             });
 
-            const video = await videoModel.findById(videoId);
-
             return {
               contactId: contact.id,
               data: smsHistory,
@@ -115,7 +113,7 @@ export const sendSMSController = async (req, res) => {
               status: "failed",
             });
 
-            const video = await videoModel.findById(videoId);
+            let associatedVideo = await videoModel.findById(videoId);
 
             console.error(
               `Failed to send SMS to ${contact.id}:`,
@@ -124,7 +122,7 @@ export const sendSMSController = async (req, res) => {
             return {
               contactId: contact.id,
               data: smsHistory,
-              videoName: video.title,
+              videoName: associatedVideo.title,
             };
           }
         })
@@ -165,7 +163,6 @@ export const sendEmailController = async (req, res) => {
       videoId,
       contactIds,
       message,
-      sendToAll,
       subject = "Konected - Loom Video",
       tags,
     } = req.body;
@@ -196,6 +193,14 @@ export const sendEmailController = async (req, res) => {
     if (!userData) {
       return res.status(400).send({
         message: "User not found",
+      });
+    }
+
+    const video = await videoModel.findById(videoId);
+
+    if (!video) {
+      return res.status(400).send({
+        message: "Video not found",
       });
     }
 
@@ -244,8 +249,6 @@ export const sendEmailController = async (req, res) => {
               status: "sent",
             });
 
-            const video = await videoModel.findById(videoId);
-
             return {
               contactId: contact.id,
               data: emailHistory,
@@ -261,7 +264,7 @@ export const sendEmailController = async (req, res) => {
               status: "failed",
             });
 
-            const video = await videoModel.findById(videoId);
+            let associatedVideo = await videoModel.findById(videoId);
 
             console.error(
               `Failed to send email to ${contact.id}:`,
@@ -270,7 +273,7 @@ export const sendEmailController = async (req, res) => {
             return {
               contactId: contact.id,
               data: emailHistory,
-              videoName: video.title,
+              videoName: associatedVideo.title,
             };
           }
         })
