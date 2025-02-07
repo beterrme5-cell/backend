@@ -8,11 +8,10 @@ import {
 } from "../services/contactRetrieval.js";
 export const sendSMSController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, sendToAll, tags, sendAttachment } = req.body;
+    let { videoId, contactIds, message, tags, sendAttachment } = req.body;
 
     if (
       (!contactIds || contactIds.length === 0) &&
-      sendToAll === false &&
       tags.length === 0
     ) {
       return res.status(400).send({
@@ -52,10 +51,6 @@ export const sendSMSController = async (req, res) => {
       return res.status(400).send({
         message: "Video not found",
       });
-    }
-
-    if (sendToAll === true) {
-      contactIds = await getAllUserContacts(user, userData, false);
     }
 
     if (tags && tags.length > 0) {
@@ -177,7 +172,6 @@ export const sendEmailController = async (req, res) => {
 
     if (
       (!contactIds || contactIds.length === 0) &&
-      sendToAll === false &&
       tags.length === 0
     ) {
       return res.status(400).send({
@@ -203,10 +197,6 @@ export const sendEmailController = async (req, res) => {
       return res.status(400).send({
         message: "User not found",
       });
-    }
-
-    if (sendToAll == true) {
-      contactIds = await getAllUserContacts(user, userData, true);
     }
 
     if (tags && tags.length > 0) {
