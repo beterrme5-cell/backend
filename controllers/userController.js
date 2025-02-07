@@ -378,7 +378,7 @@ export const getUserContactsByTags = async (req, res) => {
     const { data } = await axios.request(options);
 
     const retrievedContacts = data.contacts.map((contact) => ({
-      name: contact.firstNameLowerCase + " " + contact.lastNameLowerCase,
+      name: (contact.firstNameLowerCase || "") + " " + (contact.lastNameLowerCase || ""),
       email: contact.email,
       phone: contact.phone,
     }));
