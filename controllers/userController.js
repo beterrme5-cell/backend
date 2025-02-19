@@ -93,7 +93,7 @@ export const decryptUserToken = async (req, res) => {
 
 export const getUserContacts = async (req, res) => {
   try {
-    const { page = 1, pageLimit = 10, search } = req.query;
+    let { page = 1, pageLimit = 10, search } = req.query;
     const user = req.user;
 
     const userData = await userModel.findOne({
@@ -111,6 +111,21 @@ export const getUserContacts = async (req, res) => {
         message: "Search query must be at least 3 characters",
       });
     }
+
+    if (parseInt(page) < 1 || isNaN(parseInt(page))) {
+      return res.status(400).send({
+        message: "Page must be at least 1 and a Number.",
+      });
+    }
+
+    if (isNaN(parseInt(pageLimit)) || parseInt(pageLimit) < 1 || parseInt(pageLimit) > 100) {
+      return res.status(400).send({
+        message: "Page limit must be between 1 and 100 and be a Number.",
+      });
+    }
+
+    page = parseInt(page);
+    pageLimit = parseInt(pageLimit);
 
     let filters = search && search !== "" ? 
     [
