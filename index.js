@@ -50,8 +50,6 @@ app.get("/setup", async (_, res) => {
     .setExpirationTime("2h")
     .sign(pk);
 
-  console.log(jws);
-
   // Write content to client and end the response
   return res.json({ token: jws });
 });
