@@ -8,7 +8,10 @@ import {
 } from "../services/contactRetrieval.js";
 export const sendSMSController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, tags, sendAttachment } = req.body;
+    let { videoId, contactIds, message, tags, sendAttachment, uploadedVideoName } = req.body;
+
+    let videoExistsInternally = true;
+    let video;
 
     if (
       (!contactIds || contactIds.length === 0) &&
@@ -45,12 +48,19 @@ export const sendSMSController = async (req, res) => {
       });
     }
 
-    const video = await videoModel.findById(videoId);
+    if ( videoId == "")
+    {
+      videoExistsInternally = false;
+    }
+    else
+    {
+      video = await videoModel.findById(videoId);
 
-    if (!video) {
-      return res.status(400).send({
-        message: "Video not found",
-      });
+      if (!video) {
+        return res.status(400).send({
+          message: "Video not found",
+        });
+      }
     }
 
     if (tags && tags.length > 0) {
@@ -89,31 +99,39 @@ export const sendSMSController = async (req, res) => {
               }
             );
 
-            const smsHistory = await historyModel.create({
-              video: videoId,
+            const smsHistoryData = {
               contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
               contactAddress: contact.phone,
               sendType: "sms",
               subject: "",
               status: "sent",
-            });
+              uploadedVideoName: videoExistsInternally ? video.title : uploadedVideoName
+            };
+            
+            if (videoExistsInternally) {
+              smsHistoryData.video = videoId;
+            } 
+            const smsHistory = await historyModel.create(smsHistoryData);
 
             return {
               contactId: contact.id,
               data: smsHistory,
-              videoName: video.title,
+              videoName: videoExistsInternally ? video.title : uploadedVideoName,
             };
           } catch (err) {
-            const smsHistory = await historyModel.create({
-              video: videoId,
+            const smsHistoryData = {
               contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
               contactAddress: contact.phone,
               sendType: "sms",
               subject: "",
               status: "failed",
-            });
-
-            let associatedVideo = await videoModel.findById(videoId);
+              uploadedVideoName: videoExistsInternally ? video.title : uploadedVideoName
+            };
+            
+            if (videoExistsInternally) {
+              smsHistoryData.video = videoId;
+            } 
+            const smsHistory = await historyModel.create(smsHistoryData);
 
             console.error(
               `Failed to send SMS to ${contact.id}:`,
@@ -122,7 +140,7 @@ export const sendSMSController = async (req, res) => {
             return {
               contactId: contact.id,
               data: smsHistory,
-              videoName: associatedVideo.title,
+              videoName: videoExistsInternally ? video.title : uploadedVideoName,
             };
           }
         })
@@ -165,7 +183,11 @@ export const sendEmailController = async (req, res) => {
       message,
       subject = "Konected - Loom Video",
       tags,
+      uploadedVideoName,
     } = req.body;
+
+    let videoExistsInternally = true;
+    let video;
 
     if (
       (!contactIds || contactIds.length === 0) &&
@@ -196,12 +218,19 @@ export const sendEmailController = async (req, res) => {
       });
     }
 
-    const video = await videoModel.findById(videoId);
+    if ( videoId == "")
+    {
+      videoExistsInternally = false;
+    }
+    else
+    {
+      video = await videoModel.findById(videoId);
 
-    if (!video) {
-      return res.status(400).send({
-        message: "Video not found",
-      });
+      if (!video) {
+        return res.status(400).send({
+          message: "Video not found",
+        });
+      }
     }
 
     if (tags && tags.length > 0) {
@@ -240,31 +269,43 @@ export const sendEmailController = async (req, res) => {
               }
             );
 
-            const emailHistory = await historyModel.create({
-              video: videoId,
+            const emailHistoryData = {
+              user: userData._id,
               contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
               contactAddress: contact.email,
               sendType: "email",
               subject: subject,
               status: "sent",
-            });
+              uploadedVideoName: videoExistsInternally ? video.title : uploadedVideoName
+            };
+            
+            if (videoExistsInternally) {
+              emailHistoryData.video = videoId;  // Only add `video` if it exists internally
+            } 
+            
+            const emailHistory = await historyModel.create(emailHistoryData);
 
             return {
               contactId: contact.id,
               data: emailHistory,
-              videoName: video.title,
+              videoName: videoExistsInternally ? video.title : uploadedVideoName,
             };
           } catch (err) {
-            const emailHistory = await historyModel.create({
-              video: videoId,
+            const emailHistoryData = {
+              user: userData._id,
               contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
               contactAddress: contact.email,
               sendType: "email",
               subject: subject,
-              status: "failed",
-            });
-
-            let associatedVideo = await videoModel.findById(videoId);
+              status: "sent",
+              uploadedVideoName: videoExistsInternally ? video.title : uploadedVideoName
+            };
+            
+            if (videoExistsInternally) {
+              emailHistoryData.video = videoId;  // Only add `video` if it exists internally
+            } 
+            
+            const emailHistory = await historyModel.create(emailHistoryData);
 
             console.error(
               `Failed to send email to ${contact.id}:`,
@@ -273,7 +314,7 @@ export const sendEmailController = async (req, res) => {
             return {
               contactId: contact.id,
               data: emailHistory,
-              videoName: associatedVideo.title,
+              videoName: videoExistsInternally ? video.title : uploadedVideoName,
             };
           }
         })

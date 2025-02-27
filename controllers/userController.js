@@ -204,34 +204,36 @@ export const getUserHistories = async (req, res) => {
     }
 
     //Get all histories for all videos of a user
-    const histories = await historyModel.aggregate([
-      {
-        $lookup: {
-          from: "videos", // Collection name for Video
-          localField: "video", // Field in History referencing Video
-          foreignField: "_id", // Field in Video being referenced
-          as: "videoDetails", // Output field for the joined data
-        },
-      },
-      {
-        $unwind: "$videoDetails", // Flatten the videoDetails array
-      },
-      {
-        $match: {
-          "videoDetails.creator": userData._id, // Filter by user ID in Video
-        },
-      },
-      {
-        $addFields: {
-          videoTitle: "$videoDetails.title", // Add videoName field
-        },
-      },
-      {
-        $project: {
-          videoDetails: 0, // Exclude videoDetails field
-        },
-      },
-    ]);
+    // const histories = await historyModel.aggregate([
+    //   {
+    //     $lookup: {
+    //       from: "videos", // Collection name for Video
+    //       localField: "video", // Field in History referencing Video
+    //       foreignField: "_id", // Field in Video being referenced
+    //       as: "videoDetails", // Output field for the joined data
+    //     },
+    //   },
+    //   {
+    //     $unwind: "$videoDetails", // Flatten the videoDetails array
+    //   },
+    //   {
+    //     $match: {
+    //       "videoDetails.creator": userData._id, // Filter by user ID in Video
+    //     },
+    //   },
+    //   {
+    //     $addFields: {
+    //       videoTitle: "$videoDetails.title", // Add videoName field
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       videoDetails: 0, // Exclude videoDetails field
+    //     },
+    //   },
+    // ]);
+
+    const histories = await historyModel.find({ user: userData._id });
 
     return res.status(200).send({
       message: "Histories retrieved successfully",
