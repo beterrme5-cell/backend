@@ -100,6 +100,7 @@ export const sendSMSController = async (req, res) => {
             );
 
             const smsHistoryData = {
+              user: userData.id,
               contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
               contactAddress: contact.phone,
               sendType: "sms",
@@ -120,6 +121,7 @@ export const sendSMSController = async (req, res) => {
             };
           } catch (err) {
             const smsHistoryData = {
+              user: userData.id,
               contactName: `${contact.firstNameLowerCase} ${contact.lastNameLowerCase}`,
               contactAddress: contact.phone,
               sendType: "sms",
