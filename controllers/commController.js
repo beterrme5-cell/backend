@@ -87,7 +87,7 @@ export const sendSMSController = async (req, res) => {
                 type: "SMS",
                 contactId: contact.id,
                 message: messageForContact,
-              ...(sendAttachment && { attachments: [video.thumbnailURL] }),
+                ...(sendAttachment && videoId !== "" ? { attachments: [video.thumbnailURL] } : {}),
               },
               {
                 headers: {
