@@ -5,6 +5,11 @@ const historySchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Video",
     },
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
     contactName: {
         type: String,
         required: true,
@@ -25,6 +30,9 @@ const historySchema = new Schema({
         type: String,
         enum: ["sent", "failed"],
         required: true,
+    },
+    uploadedVideoName: {
+        type: String,
     },
 },
     { timestamps: true }
