@@ -15,7 +15,7 @@ export const sendSMSController = async (req, res) => {
 
     if ( !contactIds || contactIds.length === 0) {
       return res.status(400).send({
-        message: "Please provide at least one email id",
+        message: "Please provide at least one contact",
       });
     }
 
@@ -184,7 +184,7 @@ export const sendEmailController = async (req, res) => {
 
     if ( !contactIds || contactIds.length === 0) {
       return res.status(400).send({
-        message: "Please provide at least one email id",
+        message: "Please provide at least one contact",
       });
     }
 
