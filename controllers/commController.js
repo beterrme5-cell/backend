@@ -8,17 +8,14 @@ import {
 } from "../services/contactRetrieval.js";
 export const sendSMSController = async (req, res) => {
   try {
-    let { videoId, contactIds, message, tags, sendAttachment, uploadedVideoName } = req.body;
+    let { videoId, contactIds, message, sendAttachment, uploadedVideoName } = req.body;
 
     let videoExistsInternally = true;
     let video;
 
-    if (
-      (!contactIds || contactIds.length === 0) &&
-      tags.length === 0
-    ) {
+    if ( !contactIds || contactIds.length === 0) {
       return res.status(400).send({
-        message: "Please provide at least one contact id",
+        message: "Please provide at least one email id",
       });
     }
 
@@ -61,11 +58,6 @@ export const sendSMSController = async (req, res) => {
           message: "Video not found",
         });
       }
-    }
-
-    if (tags && tags.length > 0) {
-      contactIds = await getAllUserContacts(user, userData, false);
-      contactIds = await filterContactsByTags(contactIds, tags);
     }
 
     // Helper function to create a delay
@@ -184,17 +176,13 @@ export const sendEmailController = async (req, res) => {
       contactIds,
       message,
       subject = "Konected - Loom Video",
-      tags,
       uploadedVideoName,
     } = req.body;
 
     let videoExistsInternally = true;
     let video;
 
-    if (
-      (!contactIds || contactIds.length === 0) &&
-      tags.length === 0
-    ) {
+    if ( !contactIds || contactIds.length === 0) {
       return res.status(400).send({
         message: "Please provide at least one email id",
       });
@@ -233,11 +221,6 @@ export const sendEmailController = async (req, res) => {
           message: "Video not found",
         });
       }
-    }
-
-    if (tags && tags.length > 0) {
-      contactIds = await getAllUserContacts(user, userData, true);
-      contactIds = await filterContactsByTags(contactIds, tags);
     }
 
     // Helper function to create a delay
