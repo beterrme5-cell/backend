@@ -10,9 +10,14 @@ export const decryptUserToken = async (req, res) => {
     const { token } = req.body;
     const ssoDecryptionKey = process.env.SSO_DECRYPTION_KEY;
 
-    var decryptedData = CryptoJS.AES.decrypt(token, ssoDecryptionKey).toString(
+    let decryptedData = CryptoJS.AES.decrypt(token, ssoDecryptionKey).toString(
       CryptoJS.enc.Utf8
     );
+
+    if (!decryptedData) {
+      return res.status(400).json({ message: "Invalid token or decryption failed" });
+    }
+    
     decryptedData = JSON.parse(decryptedData);
 
     if (decryptedData.userId) {
