@@ -391,37 +391,57 @@ export const getUserContactsByTags = async (req, res) => {
       },
     ];
 
-    const options = {
-      method: "POST",
-      url: "https://services.leadconnectorhq.com/contacts/search",
-      headers: {
-        Authorization: `Bearer ${userData.accessToken}`,
-        Version: process.env.GHL_API_VERSION,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      data: {
-        locationId: user.userLocationId,
-        page: 1,
-        pageLimit: 20,
-        filters: filters,
-      },
-    };
+    let allContacts = [];
+    let page = 1;
+    let pageLimit = 100;
+    let hasMore = true;
+
+    while (hasMore) 
+    {
+
+      const options = {
+        method: "POST",
+        url: "https://services.leadconnectorhq.com/contacts/search",
+        headers: {
+          Authorization: `Bearer ${userData.accessToken}`,
+          Version: process.env.GHL_API_VERSION,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        data: {
+          locationId: user.userLocationId,
+          page: page,
+          pageLimit: pageLimit,
+          filters: filters,
+        },
+      };
 
     const { data } = await axios.request(options);
 
-    const retrievedContacts = data.contacts.map((contact) => ({
-      id: contact.id,
-      firstNameLowerCase: contact.firstNameLowerCase,
-      lastNameLowerCase: contact.lastNameLowerCase,
-      name: (contact.firstNameLowerCase || "") + " " + (contact.lastNameLowerCase || ""),
-      email: contact.email,
-      phone: contact.phone,
-    }));
+      if (data.contacts && data.contacts.length > 0) 
+      {
+        const retrievedContacts = data.contacts.map((contact) => ({
+          id: contact.id,
+          firstNameLowerCase: contact.firstNameLowerCase,
+          lastNameLowerCase: contact.lastNameLowerCase,
+          name: (contact.firstNameLowerCase || "") + " " + (contact.lastNameLowerCase || ""),
+          email: contact.email,
+          phone: contact.phone,
+        }));
+
+        allContacts = allContacts.concat(retrievedContacts);
+        page * pageLimit >= data.total ? (hasMore = false) : (hasMore = true);
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    console.log("Amount of Contacts Fetched : ", allContacts.length);
 
     return res.status(200).send({
       message: "Contacts retrieved successfully",
-      contacts: retrievedContacts,
+      contacts: allContacts,
     });
   } catch (error) {
     console.log(error);
