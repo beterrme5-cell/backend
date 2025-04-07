@@ -437,8 +437,6 @@ export const getUserContactsByTags = async (req, res) => {
       }
     }
 
-    console.log("Amount of Contacts Fetched : ", allContacts.length);
-
     return res.status(200).send({
       message: "Contacts retrieved successfully",
       contacts: allContacts,
