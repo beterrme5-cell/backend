@@ -236,15 +236,22 @@ export const sendEmailController = async (req, res) => {
           try {
             let messageForContact = message + "";
             console.log(`Sending email to: ${contact.id}`);
+
+            const payload = {
+              type: "Email",
+              contactId: contact.id,
+              subject: subject,
+              html: messageForContact,
+            };
+            
+            // Only add emailFrom if accountEmail is truthy and not an empty string
+            if (userData.accountEmail) {
+              payload.emailFrom = userData.accountEmail;
+            }
+
             const response = await axios.post(
               "https://services.leadconnectorhq.com/conversations/messages",
-              {
-                type: "Email",
-                contactId: contact.id,
-                subject: subject,
-                html: messageForContact,
-                // emailFrom: userData.accountEmail,
-              },
+              payload,
               {
                 headers: {
                   Authorization: `Bearer ${userData.accessToken}`,
