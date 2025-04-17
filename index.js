@@ -47,7 +47,7 @@ app.get("/setup", async (_, res) => {
     .setProtectedHeader({ alg: "RS256" })
     .setIssuedAt()
     .setIssuer(LOOM_SDK_APP_ID)
-    .setExpirationTime("2h")
+    .setExpirationTime("30s")
     .sign(pk);
 
   // Write content to client and end the response
