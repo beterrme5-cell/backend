@@ -8,13 +8,13 @@ import axios from "axios";
 export const decryptUserToken = async (req, res) => {
   try {
     const { token } = req.body;
-    console.log("decryptUserToken called with token:", token);
+    // console.log("decryptUserToken called with token:", token);
     const ssoDecryptionKey = process.env.SSO_DECRYPTION_KEY;
 
     let decryptedData = CryptoJS.AES.decrypt(token, ssoDecryptionKey).toString(
       CryptoJS.enc.Utf8
     );
-    console.log("hello", decryptedData);
+    // console.log("hello", decryptedData);
 
     if (!decryptedData) {
       return res
@@ -85,79 +85,76 @@ export const decryptUserToken = async (req, res) => {
           });
         } else {
           /////
-          // const Agency = await userModel.findOne({
-          //   companyId: decryptedData.companyId,
-          //   userLocationId: "",
-          // });
-          // consoloe.log("Agency => ", Agency);
-
-          // if (!Agency) {
-          //   return res.status(400).send({
-          //     message: "Agency not found",
-          //   });
-          // }
-          // // Now get location-specific access token
-          // try {
-          //   const locationTokenResponse = await axios.post(
-          //     "https://services.leadconnectorhq.com/oauth/locationToken",
-          //     new URLSearchParams({
-          //       companyId: decryptedData.companyId,
-          //       locationId: decryptedData.activeLocation,
-          //     }),
-          //     {
-          //       headers: {
-          //         "Content-Type": "application/x-www-form-urlencoded",
-          //         Accept: "application/json",
-          //         Version: "2021-07-28",
-          //         Authorization: `Bearer ${Agency.accessToken}`,
-          //       },
-          //     }
-          //   );
-
-          //   const locationTokenData = locationTokenResponse.data;
-
-          //   // Calculate expiry date (current time + expires_in seconds)
-          //   const expiryDate = new Date();
-          //   expiryDate.setSeconds(
-          //     expiryDate.getSeconds() + locationTokenData.expires_in
-          //   );
-
-          //   // Create new user with location-specific token
-          //   const newUserProfile = await userModel.create({
-          //     accountId: decryptedData.userId,
-          //     userLocationId: decryptedData.activeLocation,
-          //     companyId: decryptedData.companyId,
-          //     domain: Agency.domain,
-          //     accessToken: locationTokenData.access_token,
-          //     refreshToken: Agency.refreshToken, // Or use location-specific if available
-          //     expiryDate: expiryDate,
-          //     scope: locationTokenData.scope,
-          //     showDomainPopup: Agency.showDomainPopup,
-          //     userCode: Agency.userCode,
-          //     accountEmail: decryptedData.email,
-          //   });
-
-          //   const token = generateToken(newUserProfile);
-
-          //   return res.status(200).send({
-          //     message: "User token decrypted successfully with location access",
-          //     user: {
-          //       accountId: newUserProfile.accountId,
-          //       companyId: newUserProfile.companyId,
-          //       userLocationId: newUserProfile.userLocationId,
-          //     },
-          //     accessToken: token,
-          //   });
-          // } catch (apiError) {
-          //   console.error("Location token API error:", apiError);
-          //   return res.status(400).send({
-          //     message: "Failed to get location access token",
-          //     error: apiError.message,
-          //   });
-          // }
-          return res.status(400).send({
-            message: "User not found",
+          const Agency = await userModel.findOne({
+            companyId: decryptedData.companyId,
           });
+          console.log("Agency => ", Agency);
+
+          if (!Agency) {
+            return res.status(400).send({
+              message: "Agency not found",
+            });
+          }
+          // Now get location-specific access token
+          try {
+            const locationTokenResponse = await axios.post(
+              "https://services.leadconnectorhq.com/oauth/locationToken",
+              new URLSearchParams({
+                companyId: decryptedData.companyId,
+                locationId: decryptedData.activeLocation,
+              }),
+              {
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                  Accept: "application/json",
+                  Version: "2021-07-28",
+                  Authorization: `Bearer ${Agency.accessToken}`,
+                },
+              }
+            );
+
+            const locationTokenData = locationTokenResponse.data;
+            console.log("Location Token Data => ", locationTokenData);
+
+            // Calculate expiry date (current time + expires_in seconds)
+            const expiryDate = new Date();
+            expiryDate.setSeconds(
+              expiryDate.getSeconds() + locationTokenData.expires_in
+            );
+
+            // Create new user with location-specific token
+            const newUserProfile = await userModel.create({
+              accountId: decryptedData.userId,
+              userLocationId: decryptedData.activeLocation,
+              companyId: decryptedData.companyId,
+              domain: Agency.domain,
+              accessToken: locationTokenData.access_token,
+              refreshToken: locationTokenData.refresh_token, // Or use location-specific if available
+              expiryDate: expiryDate,
+              scope: locationTokenData.scope,
+              showDomainPopup: Agency.showDomainPopup,
+              userCode: Agency.userCode,
+              accountEmail: decryptedData.email,
+            });
+
+            const token = generateToken(newUserProfile);
+
+            return res.status(200).send({
+              message: "User token decrypted successfully with location access",
+              user: {
+                accountId: newUserProfile.accountId,
+                companyId: newUserProfile.companyId,
+                userLocationId: newUserProfile.userLocationId,
+              },
+              accessToken: token,
+            });
+          } catch (apiError) {
+            console.error("Location token API error:", apiError);
+            return res.status(400).send({
+              message: "Failed to get location access token",
+              error: apiError.message,
+            });
+          }
         }
       }
     } else {
