@@ -8,16 +8,20 @@ import axios from "axios";
 export const decryptUserToken = async (req, res) => {
   try {
     const { token } = req.body;
+    console.log("decryptUserToken called with token:", token);
     const ssoDecryptionKey = process.env.SSO_DECRYPTION_KEY;
 
     let decryptedData = CryptoJS.AES.decrypt(token, ssoDecryptionKey).toString(
       CryptoJS.enc.Utf8
     );
+    console.log("hello", decryptedData);
 
     if (!decryptedData) {
-      return res.status(400).json({ message: "Invalid token or decryption failed" });
+      return res
+        .status(400)
+        .json({ message: "Invalid token or decryption failed" });
     }
-    
+
     decryptedData = JSON.parse(decryptedData);
 
     if (decryptedData.userId) {
@@ -32,7 +36,7 @@ export const decryptUserToken = async (req, res) => {
       if (user) {
         user.accountEmail = decryptedData.email;
         await user.save();
-
+        console.log(user);
         const token = generateToken(user);
 
         return res.status(200).send({
@@ -67,7 +71,7 @@ export const decryptUserToken = async (req, res) => {
             userCode: user.userCode,
             accountEmail: decryptedData.email,
           });
-
+          console.log("user", newUserProfile);
           const token = generateToken(newUserProfile);
 
           return res.status(200).send({
@@ -80,6 +84,77 @@ export const decryptUserToken = async (req, res) => {
             accessToken: token,
           });
         } else {
+          /////
+          // const Agency = await userModel.findOne({
+          //   companyId: decryptedData.companyId,
+          //   userLocationId: "",
+          // });
+          // consoloe.log("Agency => ", Agency);
+
+          // if (!Agency) {
+          //   return res.status(400).send({
+          //     message: "Agency not found",
+          //   });
+          // }
+          // // Now get location-specific access token
+          // try {
+          //   const locationTokenResponse = await axios.post(
+          //     "https://services.leadconnectorhq.com/oauth/locationToken",
+          //     new URLSearchParams({
+          //       companyId: decryptedData.companyId,
+          //       locationId: decryptedData.activeLocation,
+          //     }),
+          //     {
+          //       headers: {
+          //         "Content-Type": "application/x-www-form-urlencoded",
+          //         Accept: "application/json",
+          //         Version: "2021-07-28",
+          //         Authorization: `Bearer ${Agency.accessToken}`,
+          //       },
+          //     }
+          //   );
+
+          //   const locationTokenData = locationTokenResponse.data;
+
+          //   // Calculate expiry date (current time + expires_in seconds)
+          //   const expiryDate = new Date();
+          //   expiryDate.setSeconds(
+          //     expiryDate.getSeconds() + locationTokenData.expires_in
+          //   );
+
+          //   // Create new user with location-specific token
+          //   const newUserProfile = await userModel.create({
+          //     accountId: decryptedData.userId,
+          //     userLocationId: decryptedData.activeLocation,
+          //     companyId: decryptedData.companyId,
+          //     domain: Agency.domain,
+          //     accessToken: locationTokenData.access_token,
+          //     refreshToken: Agency.refreshToken, // Or use location-specific if available
+          //     expiryDate: expiryDate,
+          //     scope: locationTokenData.scope,
+          //     showDomainPopup: Agency.showDomainPopup,
+          //     userCode: Agency.userCode,
+          //     accountEmail: decryptedData.email,
+          //   });
+
+          //   const token = generateToken(newUserProfile);
+
+          //   return res.status(200).send({
+          //     message: "User token decrypted successfully with location access",
+          //     user: {
+          //       accountId: newUserProfile.accountId,
+          //       companyId: newUserProfile.companyId,
+          //       userLocationId: newUserProfile.userLocationId,
+          //     },
+          //     accessToken: token,
+          //   });
+          // } catch (apiError) {
+          //   console.error("Location token API error:", apiError);
+          //   return res.status(400).send({
+          //     message: "Failed to get location access token",
+          //     error: apiError.message,
+          //   });
+          // }
           return res.status(400).send({
             message: "User not found",
           });
@@ -123,7 +198,11 @@ export const getUserContacts = async (req, res) => {
       });
     }
 
-    if (isNaN(parseInt(pageLimit)) || parseInt(pageLimit) < 1 || parseInt(pageLimit) > 100) {
+    if (
+      isNaN(parseInt(pageLimit)) ||
+      parseInt(pageLimit) < 1 ||
+      parseInt(pageLimit) > 100
+    ) {
       return res.status(400).send({
         message: "Page limit must be between 1 and 100 and be a Number.",
       });
@@ -132,36 +211,36 @@ export const getUserContacts = async (req, res) => {
     page = parseInt(page);
     pageLimit = parseInt(pageLimit);
 
-    let filters = search && search !== "" ? 
-    [
-
-      {
-        group: "OR",
-        filters: [
-          {
-            field: "firstNameLowerCase",
-            operator: "contains",
-            value: search,
-          },
-          {
-            field: "lastNameLowerCase",
-            operator: "contains",
-            value: search,
-          },
-          {
-            field: "email",
-            operator: "contains",
-            value: search,
-          },
-          {
-            field: "phone",
-            operator: "contains",
-            value: search,
-          },
-        ],
-      },
-    ]
-  : [];
+    let filters =
+      search && search !== ""
+        ? [
+            {
+              group: "OR",
+              filters: [
+                {
+                  field: "firstNameLowerCase",
+                  operator: "contains",
+                  value: search,
+                },
+                {
+                  field: "lastNameLowerCase",
+                  operator: "contains",
+                  value: search,
+                },
+                {
+                  field: "email",
+                  operator: "contains",
+                  value: search,
+                },
+                {
+                  field: "phone",
+                  operator: "contains",
+                  value: search,
+                },
+              ],
+            },
+          ]
+        : [];
 
     const options = {
       method: "POST",
@@ -181,7 +260,7 @@ export const getUserContacts = async (req, res) => {
     };
 
     const { data } = await axios.request(options);
-      
+
     return res.status(200).send({
       message: "Contacts retrieved successfully",
       contacts: data,
@@ -396,9 +475,7 @@ export const getUserContactsByTags = async (req, res) => {
     let pageLimit = 100;
     let hasMore = true;
 
-    while (hasMore) 
-    {
-
+    while (hasMore) {
       const options = {
         method: "POST",
         url: "https://services.leadconnectorhq.com/contacts/search",
@@ -416,15 +493,17 @@ export const getUserContactsByTags = async (req, res) => {
         },
       };
 
-    const { data } = await axios.request(options);
+      const { data } = await axios.request(options);
 
-      if (data.contacts && data.contacts.length > 0) 
-      {
+      if (data.contacts && data.contacts.length > 0) {
         const retrievedContacts = data.contacts.map((contact) => ({
           id: contact.id,
           firstNameLowerCase: contact.firstNameLowerCase,
           lastNameLowerCase: contact.lastNameLowerCase,
-          name: (contact.firstNameLowerCase || "") + " " + (contact.lastNameLowerCase || ""),
+          name:
+            (contact.firstNameLowerCase || "") +
+            " " +
+            (contact.lastNameLowerCase || ""),
           email: contact.email,
           phone: contact.phone,
         }));
