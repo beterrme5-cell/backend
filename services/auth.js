@@ -8,9 +8,10 @@ export const generateToken = (user) => {
       companyId: user.companyId,
     };
 
-    const token = Jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    // const token = Jwt.sign(payload, process.env.JWT_SECRET, {
+    //   expiresIn: "7d",
+    // });
+    const token = Jwt.sign(payload, process.env.JWT_SECRET);
 
     return token;
   } catch (error) {
