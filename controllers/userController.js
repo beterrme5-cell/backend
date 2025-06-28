@@ -1,20 +1,30 @@
 import userModel from "../models/userModel.js";
 import historyModel from "../models/historyModel.js";
 import { generateToken } from "../services/auth.js";
-import { sanitizeUser } from "../services/sanitization.js";
 import CryptoJS from "crypto-js";
 import axios from "axios";
 
 export const decryptUserToken = async (req, res) => {
   try {
     const { token } = req.body;
-    // console.log("decryptUserToken called with token:", token);
+
+    console.log("decryptUserToken called with token:", token);
+
+    if (!token) {
+      return res
+        .status(400)
+        .json({ message: "Token is required for decryption" });
+    }
+
     const ssoDecryptionKey = process.env.SSO_DECRYPTION_KEY;
+
+    console.log("SSO Decryption Key:", ssoDecryptionKey);
 
     let decryptedData = CryptoJS.AES.decrypt(token, ssoDecryptionKey).toString(
       CryptoJS.enc.Utf8
     );
-    // console.log("hello", decryptedData);
+
+    // console.log("decryptedData", decryptedData);
 
     if (!decryptedData) {
       return res
