@@ -10,6 +10,7 @@ import { videoRoutes } from "./routes/videoRoutes.js";
 import { initiate } from "./GHL/initiate.js";
 import { callback } from "./GHL/callback.js";
 import { commRoutes } from "./routes/commRoutes.js";
+import { automationRoutes } from "./routes/automationRoutes.js";
 
 // Configuring the environment variables
 dotenv.config();
@@ -35,6 +36,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/comms", commRoutes);
 app.use("/init", initiate);
 app.use("/api/video", videoRoutes);
+app.use("/api/automation", automationRoutes);
 
 // Generate JWT for Loom SDK
 app.get("/setup", async (_, res) => {
