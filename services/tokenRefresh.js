@@ -140,37 +140,47 @@ export const refreshAllGHLAccessTokens = async (req, res) => {
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 }
 
-                const locationTokenResponse = await axios.post(
-                    "https://services.leadconnectorhq.com/oauth/locationToken",
-                    new URLSearchParams({
-                      companyId: agencyAccount.companyId,
-                      locationId: subAccount.userLocationId,
-                    }),
-                    {
-                      headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        Accept: "application/json",
-                        Version: "2021-07-28",
-                        Authorization: `Bearer ${agencyAccesstoken}`,
-                      },
-                    }
-                );
-
-                rateLimitCount++;
-      
-                const locationTokenData = locationTokenResponse.data;
-                // console.log("Location Token Data => ", locationTokenData);
-    
-                // Calculate expiry date (current time + expires_in seconds)
-                const expiryDate = new Date();
-                expiryDate.setSeconds(expiryDate.getSeconds() + (locationTokenData.expires_in - 60));
-
-                await userModel.updateMany(
-                    { userLocationId: subAccount.userLocationId },
-                    { accessToken: locationTokenData.access_token, refreshToken: locationTokenData.refresh_token, expiryDate: expiryDate, scope: locationTokenData.scope }
-                );
+                try {
+                  const locationTokenResponse = await axios.post(
+                      "https://services.leadconnectorhq.com/oauth/locationToken",
+                      new URLSearchParams({
+                          companyId: agencyAccount.companyId,
+                          locationId: subAccount.userLocationId,
+                      }),
+                      {
+                          headers: {
+                              "Content-Type": "application/x-www-form-urlencoded",
+                              Accept: "application/json",
+                              Version: "2021-07-28",
+                              Authorization: `Bearer ${agencyAccesstoken}`,
+                          },
+                      }
+                  );
+              
+                  rateLimitCount++;
+              
+                  const locationTokenData = locationTokenResponse.data;
+              
+                  const expiryDate = new Date();
+                  expiryDate.setSeconds(expiryDate.getSeconds() + (locationTokenData.expires_in - 60));
+              
+                  await userModel.updateMany(
+                      { userLocationId: subAccount.userLocationId },
+                      {
+                          accessToken: locationTokenData.access_token,
+                          refreshToken: locationTokenData.refresh_token,
+                          expiryDate: expiryDate,
+                          scope: locationTokenData.scope,
+                      }
+                  );
+              } catch (error) {
+                  console.error(
+                      `Failed to fetch/update token for userLocationId ${subAccount.userLocationId}:`,
+                      error.response?.data || error.message
+                  );
+                  continue; // Skip to next subAccount
+              }
             }
-
         }
 
         return res.status(201).send({message: "Access tokens refreshed successfully!"});
