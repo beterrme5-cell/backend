@@ -223,21 +223,66 @@ export const getVideoById = async (req, res) => {
 // };
 
 // Updated backend controller with pagination
+// export const getAllVideos = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+
+//     const videos = await videoModel.find().skip(skip).limit(limit);
+//     const totalVideos = await videoModel.countDocuments();
+
+//     res.status(200).send({
+//       message: "Videos retrieved successfully",
+//       videos,
+//       currentPage: page,
+//       totalPages: Math.ceil(totalVideos / limit),
+//       totalVideos,
+//     });
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// };
+
+// First, let's update the backend API to return proper pagination data for both video types
 export const getAllVideos = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const videos = await videoModel.find().skip(skip).limit(limit);
-    const totalVideos = await videoModel.countDocuments();
+    // Get recorded videos with pagination
+    const recordedVideos = await videoModel
+      .find({ type: "recorded" })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+    const totalRecorded = await videoModel.countDocuments({ type: "recorded" });
+
+    // Get uploaded videos with pagination
+    const uploadedVideos = await videoModel
+      .find({ type: "uploaded" })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+    const totalUploaded = await videoModel.countDocuments({ type: "uploaded" });
 
     res.status(200).send({
       message: "Videos retrieved successfully",
-      videos,
-      currentPage: page,
-      totalPages: Math.ceil(totalVideos / limit),
-      totalVideos,
+      recordedVideos,
+      uploadedVideos,
+      pagination: {
+        recorded: {
+          currentPage: page,
+          totalPages: Math.ceil(totalRecorded / limit),
+          totalVideos: totalRecorded,
+        },
+        uploaded: {
+          currentPage: page,
+          totalPages: Math.ceil(totalUploaded / limit),
+          totalVideos: totalUploaded,
+        },
+      },
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
