@@ -209,13 +209,35 @@ export const getVideoById = async (req, res) => {
 };
 
 //get all videos
+// export const getAllVideos = async (req, res) => {
+//   try {
+//     const videos = await videoModel.find();
+
+//     res.status(200).send({
+//       message: "Videos retrieved successfully",
+//       videos,
+//     });
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// };
+
+// Updated backend controller with pagination
 export const getAllVideos = async (req, res) => {
   try {
-    const videos = await videoModel.find();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const videos = await videoModel.find().skip(skip).limit(limit);
+    const totalVideos = await videoModel.countDocuments();
 
     res.status(200).send({
       message: "Videos retrieved successfully",
       videos,
+      currentPage: page,
+      totalPages: Math.ceil(totalVideos / limit),
+      totalVideos,
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
