@@ -126,66 +126,66 @@ export const deleteVideo = async (req, res) => {
 };
 
 // get all videos by account id
-export const getVideosByAccountId = async (req, res) => {
-  try {
-    const user = req.user;
+// export const getVideosByAccountId = async (req, res) => {
+//   try {
+//     const user = req.user;
 
-    const userData = await userModel.findOne({
-      accountId: user.accountId,
-      companyId: user.companyId,
-      userLocationId: user.userLocationId,
-    });
-    if (!userData) {
-      return res.status(400).send({
-        message: "User not found",
-      });
-    }
-    const recordedVideos = await videoModel.find({ creator: userData._id });
+//     const userData = await userModel.findOne({
+//       accountId: user.accountId,
+//       companyId: user.companyId,
+//       userLocationId: user.userLocationId,
+//     });
+//     if (!userData) {
+//       return res.status(400).send({
+//         message: "User not found",
+//       });
+//     }
+//     const recordedVideos = await videoModel.find({ creator: userData._id });
 
-    const options = {
-      method: "GET",
-      url: "https://services.leadconnectorhq.com/medias/files",
-      params: {
-        sortBy: "createdAt",
-        sortOrder: "asc",
-        altType: "location",
-        type: "file",
-        altId: userData.userLocationId,
-      },
-      headers: {
-        Authorization: `Bearer ${userData.accessToken}`,
-        Version: "2021-07-28",
-        Accept: "application/json",
-      },
-    };
+//     const options = {
+//       method: "GET",
+//       url: "https://services.leadconnectorhq.com/medias/files",
+//       params: {
+//         sortBy: "createdAt",
+//         sortOrder: "asc",
+//         altType: "location",
+//         type: "file",
+//         altId: userData.userLocationId,
+//       },
+//       headers: {
+//         Authorization: `Bearer ${userData.accessToken}`,
+//         Version: "2021-07-28",
+//         Accept: "application/json",
+//       },
+//     };
 
-    const { data } = await axios.request(options);
-    let uploadedVideos = [];
+//     const { data } = await axios.request(options);
+//     let uploadedVideos = [];
 
-    if (data && data.files) {
-      uploadedVideos = data.files
-        .filter((file) => file.contentType.startsWith("video"))
-        .map((file) => ({
-          title: file.name,
-          description: "",
-          embeddedLink: file.url,
-          shareableLink: file.url,
-          thumbnailURL: "",
-          createdAt: file.createdAt,
-          updatedAt: file.updatedAt,
-        }));
-    }
+//     if (data && data.files) {
+//       uploadedVideos = data.files
+//         .filter((file) => file.contentType.startsWith("video"))
+//         .map((file) => ({
+//           title: file.name,
+//           description: "",
+//           embeddedLink: file.url,
+//           shareableLink: file.url,
+//           thumbnailURL: "",
+//           createdAt: file.createdAt,
+//           updatedAt: file.updatedAt,
+//         }));
+//     }
 
-    res.status(200).send({
-      message: "Videos retrieved successfully",
-      recordedVideos,
-      uploadedVideos,
-    });
-  } catch (error) {
-    console.error("Error fetching videos:", error);
-    res.status(400).json({ message: error.message });
-  }
-};
+//     res.status(200).send({
+//       message: "Videos retrieved successfully",
+//       recordedVideos,
+//       uploadedVideos,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching videos:", error);
+//     res.status(400).json({ message: error.message });
+//   }
+// };
 
 // get a video by id
 export const getVideoById = async (req, res) => {
@@ -209,82 +209,162 @@ export const getVideoById = async (req, res) => {
 };
 
 //get all videos
-// export const getAllVideos = async (req, res) => {
-//   try {
-//     const videos = await videoModel.find();
+export const getAllVideos = async (req, res) => {
+  try {
+    const videos = await videoModel.find();
 
-//     res.status(200).send({
-//       message: "Videos retrieved successfully",
-//       videos,
-//     });
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
+    res.status(200).send({
+      message: "Videos retrieved successfully",
+      videos,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
-// Updated backend controller with pagination
 // export const getAllVideos = async (req, res) => {
 //   try {
 //     const page = parseInt(req.query.page) || 1;
 //     const limit = parseInt(req.query.limit) || 10;
 //     const skip = (page - 1) * limit;
 
-//     const videos = await videoModel.find().skip(skip).limit(limit);
+//     // Get ALL videos sorted by newest first (important for pagination)
+//     const allVideos = await videoModel
+//       .find()
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(limit);
+
 //     const totalVideos = await videoModel.countDocuments();
+
+//     // Separate into recorded/uploaded (frontend expects this structure)
+//     const recordedVideos = allVideos.filter((v) => !v.uploaded);
+//     const uploadedVideos = allVideos.filter((v) => v.uploaded);
 
 //     res.status(200).send({
 //       message: "Videos retrieved successfully",
-//       videos,
+//       recordedVideos,
+//       uploadedVideos,
 //       currentPage: page,
 //       totalPages: Math.ceil(totalVideos / limit),
 //       totalVideos,
+//       pagination: {
+//         recorded: {
+//           currentPage: page,
+//           totalPages: Math.ceil(totalVideos / limit),
+//           totalVideos: totalVideos,
+//         },
+//         uploaded: {
+//           currentPage: page,
+//           totalPages: Math.ceil(totalVideos / limit),
+//           totalVideos: totalVideos,
+//         },
+//       },
 //     });
 //   } catch (error) {
 //     res.status(400).json({ message: error.message });
 //   }
 // };
 
-// First, let's update the backend API to return proper pagination data for both video types
-export const getAllVideos = async (req, res) => {
+export const getVideosByAccountId = async (req, res) => {
   try {
+    const user = req.user;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    // Find user data
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      companyId: user.companyId,
+      userLocationId: user.userLocationId,
+    });
+
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
     // Get recorded videos with pagination
     const recordedVideos = await videoModel
-      .find({ type: "recorded" })
+      .find({ creator: userData._id })
+      .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-    const totalRecorded = await videoModel.countDocuments({ type: "recorded" });
+      .limit(limit);
 
-    // Get uploaded videos with pagination
-    const uploadedVideos = await videoModel
-      .find({ type: "uploaded" })
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-    const totalUploaded = await videoModel.countDocuments({ type: "uploaded" });
+    const totalRecordedVideos = await videoModel.countDocuments({
+      creator: userData._id,
+    });
+
+    // Get uploaded videos from API
+    const options = {
+      method: "GET",
+      url: "https://services.leadconnectorhq.com/medias/files",
+      params: {
+        sortBy: "createdAt",
+        sortOrder: "desc", // Changed to desc to match recorded videos sorting
+        altType: "location",
+        type: "file",
+        altId: userData.userLocationId,
+      },
+      headers: {
+        Authorization: `Bearer ${userData.accessToken}`,
+        Version: "2021-07-28",
+        Accept: "application/json",
+      },
+    };
+
+    const { data } = await axios.request(options);
+    let allUploadedVideos = [];
+
+    if (data && data.files) {
+      allUploadedVideos = data.files
+        .filter((file) => file.contentType.startsWith("video"))
+        .map((file) => ({
+          title: file.name,
+          description: "",
+          embeddedLink: file.url,
+          shareableLink: file.url,
+          thumbnailURL: "",
+          createdAt: file.createdAt,
+          updatedAt: file.updatedAt,
+          uploaded: true, // Adding this to match the other function's structure
+        }));
+    }
+
+    // Apply pagination to uploaded videos (since API doesn't support pagination, we'll do it client-side)
+    const totalUploadedVideos = allUploadedVideos.length;
+    const uploadedVideos = allUploadedVideos.slice(skip, skip + limit);
 
     res.status(200).send({
       message: "Videos retrieved successfully",
       recordedVideos,
       uploadedVideos,
+      currentPage: page,
+      totalPages: {
+        recorded: Math.ceil(totalRecordedVideos / limit),
+        uploaded: Math.ceil(totalUploadedVideos / limit),
+      },
+      totalVideos: {
+        recorded: totalRecordedVideos,
+        uploaded: totalUploadedVideos,
+      },
       pagination: {
         recorded: {
           currentPage: page,
-          totalPages: Math.ceil(totalRecorded / limit),
-          totalVideos: totalRecorded,
+          totalPages: Math.ceil(totalRecordedVideos / limit),
+          totalVideos: totalRecordedVideos,
         },
         uploaded: {
           currentPage: page,
-          totalPages: Math.ceil(totalUploaded / limit),
-          totalVideos: totalUploaded,
+          totalPages: Math.ceil(totalUploadedVideos / limit),
+          totalVideos: totalUploadedVideos,
         },
       },
     });
   } catch (error) {
+    console.error("Error fetching videos:", error);
     res.status(400).json({ message: error.message });
   }
 };
