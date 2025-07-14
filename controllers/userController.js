@@ -8,8 +8,6 @@ export const decryptUserToken = async (req, res) => {
   try {
     const { token } = req.body;
 
-    console.log("decryptUserToken called with token:", token);
-
     if (!token) {
       return res
         .status(400)
@@ -17,8 +15,6 @@ export const decryptUserToken = async (req, res) => {
     }
 
     const ssoDecryptionKey = process.env.SSO_DECRYPTION_KEY;
-
-    console.log("SSO Decryption Key:", ssoDecryptionKey);
 
     let decryptedData = CryptoJS.AES.decrypt(token, ssoDecryptionKey).toString(
       CryptoJS.enc.Utf8
@@ -46,7 +42,6 @@ export const decryptUserToken = async (req, res) => {
       if (user) {
         user.accountEmail = decryptedData.email;
         await user.save();
-        console.log(user);
         const token = generateToken(user);
 
         return res.status(200).send({
