@@ -2,6 +2,21 @@ import axios from "axios";
 import videoModel from "../models/videoModel.js";
 import userModel from "../models/userModel.js";
 import { fetchThumbnailURL } from "../services/fetchThumbnailURL.js";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v4 as uuidv4 } from "uuid";
+
+import dotenv from "dotenv";
+dotenv.config();
+
+// ⚙️ Create S3 client
+const s3 = new S3Client({
+  region: "us-east-2", // Change to your region
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Store in .env
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 // Save a new video
 export const saveNewVideo = async (req, res) => {
@@ -366,5 +381,134 @@ export const getVideosByAccountId = async (req, res) => {
   } catch (error) {
     console.error("Error fetching videos:", error);
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const getPresignedUrl = async (req, res) => {
+  try {
+    const { fileName, fileType } = req.body;
+
+    if (!fileName || !fileType) {
+      return res
+        .status(400)
+        .json({ message: "fileName and fileType required" });
+    }
+
+    const uniqueFileName = `recordings/${uuidv4()}.webm`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Key: uniqueFileName,
+      ContentType: fileType,
+    });
+
+    //  Generate URL valid for 5 minutes
+    const url = await getSignedUrl(s3, command, { expiresIn: 300 });
+
+    res.status(200).send({
+      message: "Presigned Url generated Successfully",
+      url,
+      key: uniqueFileName, //  helps to store video path later
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Save a new custom video
+export const saveCustomNewVideo = async (req, res) => {
+  try {
+    const { title, key, duration } = req.body;
+
+    const user = req.user;
+
+    const userData = await userModel.findOne({
+      accountId: user.accountId,
+      companyId: user.companyId,
+      userLocationId: user.userLocationId,
+    });
+
+    if (!userData) {
+      return res.status(400).send({
+        message: "User not found",
+      });
+    }
+
+    // Save the video after fetching the thumbnail
+    const video = await videoModel.create({
+      creator: userData._id,
+      title,
+      videoKey: key,
+      duration: duration,
+      description: "",
+      thumbnailKey: "", // empty for now
+      teaserKey: "", // empty for now
+      gifKey: "", // empty for now
+      eventProcessed: false, // optional since it's default
+    });
+
+    return res.status(201).send({
+      message: "Video saved successfully",
+      video,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Update a custom video
+export const updateCustomNewVideo = async (req, res) => {
+  try {
+    // Destructure the S3 keys from the request body
+    const { videoKey, thumbnailKey, gifKey, teaserKey } = req.body;
+
+    console.log("🎥 Received S3 keys:");
+    console.log("Video:", videoKey);
+    if (thumbnailKey) console.log("Thumbnail:", thumbnailKey); // NEW: Only log if provided
+    if (gifKey) console.log("GIF:", gifKey);
+    if (teaserKey) console.log("Teaser:", teaserKey);
+
+    // Validate input
+    if (!videoKey) {
+      return res.status(400).json({ message: "videoKey is required" });
+    }
+
+    // NEW: Build update fields only for provided keys (partial update, no overwriting to "")
+    const updateFields = {};
+    if (thumbnailKey !== undefined) updateFields.thumbnailKey = thumbnailKey;
+    if (gifKey !== undefined) updateFields.gifKey = gifKey;
+    if (teaserKey !== undefined) updateFields.teaserKey = teaserKey;
+
+    // Find and update video document (no eventProcessed here yet)
+    const video = await videoModel.findOneAndUpdate(
+      { videoKey },
+      updateFields,
+      { new: true } // ensures the updated doc is returned
+    );
+
+    // Handle not found case
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    // NEW: After update, check if all keys are now set, then set eventProcessed
+    if (video.thumbnailKey && video.gifKey && video.teaserKey) {
+      video.eventProcessed = true;
+      await video.save();
+      console.log("✅ All keys present; set eventProcessed to true");
+    } else {
+      console.log("ℹ️ Partial update; eventProcessed remains false");
+    }
+
+    // Return updated document
+    return res.status(200).json({
+      message: "Video updated successfully",
+      video,
+    });
+  } catch (error) {
+    console.error("❌ Error updating custom video:", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };

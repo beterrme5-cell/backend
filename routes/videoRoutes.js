@@ -6,6 +6,9 @@ import {
   getVideosByAccountId,
   getAllVideos,
   getVideoById,
+  getPresignedUrl,
+  saveCustomNewVideo,
+  updateCustomNewVideo,
 } from "../controllers/videoController.js";
 
 //middlewares
@@ -36,3 +39,11 @@ videoRoutes.get("/getAllVideos", authenticateToken, getAllVideos);
 
 //Get video by id
 videoRoutes.get("/getVideoById/:id", authenticateToken, getVideoById);
+
+//get presisgned url for video upload to aws
+videoRoutes.post("/getSignedUrl", getPresignedUrl);
+
+//Save a new custom video
+videoRoutes.post("/saveCustomNewVideo", authenticateToken, saveCustomNewVideo);
+
+videoRoutes.post("/updateCustomNewVideo", updateCustomNewVideo);

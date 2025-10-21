@@ -13,17 +13,26 @@ const videoSchema = new Schema(
     description: {
       type: String,
     },
-    embeddedLink: {
+
+    videoKey: {
       type: String,
-      required: true,
     },
-    shareableLink: {
+    duration: {
       type: String,
-      required: true,
     },
-    thumbnailURL: {
+    teaserKey: {
       type: String,
-      required: true,
+    },
+    thumbnailKey: {
+      type: String,
+    },
+
+    gifKey: {
+      type: String,
+    },
+    eventProcessed: {
+      type: Boolean,
+      default: false, // means processing not completed yet
     },
   },
   { timestamps: true }
