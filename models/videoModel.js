@@ -30,6 +30,13 @@ const videoSchema = new Schema(
     gifKey: {
       type: String,
     },
+    captionKey: {
+      type: String,
+    },
+    hasCaption: {
+      type: Boolean,
+      default: false,
+    },
     eventProcessed: {
       type: Boolean,
       default: false, // means processing not completed yet

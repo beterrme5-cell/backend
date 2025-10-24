@@ -456,57 +456,120 @@ export const saveCustomNewVideo = async (req, res) => {
   }
 };
 
-// Update a custom video
+// // Update a custom video
+// export const updateCustomNewVideo = async (req, res) => {
+//   try {
+//     // Destructure the S3 keys from the request body
+//     const { videoKey, thumbnailKey, gifKey, teaserKey } = req.body;
+
+//     console.log("🎥 Received S3 keys:");
+//     console.log("Video:", videoKey);
+//     if (thumbnailKey) console.log("Thumbnail:", thumbnailKey); // NEW: Only log if provided
+//     if (gifKey) console.log("GIF:", gifKey);
+//     if (teaserKey) console.log("Teaser:", teaserKey);
+
+//     // Validate input
+//     if (!videoKey) {
+//       return res.status(400).json({ message: "videoKey is required" });
+//     }
+
+//     // NEW: Build update fields only for provided keys (partial update, no overwriting to "")
+//     const updateFields = {};
+//     if (thumbnailKey !== undefined) updateFields.thumbnailKey = thumbnailKey;
+//     if (gifKey !== undefined) updateFields.gifKey = gifKey;
+//     if (teaserKey !== undefined) updateFields.teaserKey = teaserKey;
+
+//     // Find and update video document (no eventProcessed here yet)
+//     const video = await videoModel.findOneAndUpdate(
+//       { videoKey },
+//       updateFields,
+//       { new: true } // ensures the updated doc is returned
+//     );
+
+//     // Handle not found case
+//     if (!video) {
+//       return res.status(404).json({ message: "Video not found" });
+//     }
+
+//     // NEW: After update, check if all keys are now set, then set eventProcessed
+//     if (video.thumbnailKey && video.gifKey && video.teaserKey) {
+//       video.eventProcessed = true;
+//       await video.save();
+//       console.log("✅ All keys present; set eventProcessed to true");
+//     } else {
+//       console.log("ℹ️ Partial update; eventProcessed remains false");
+//     }
+
+//     // Return updated document
+//     return res.status(200).json({
+//       message: "Video updated successfully",
+//       video,
+//     });
+//   } catch (error) {
+//     console.error("❌ Error updating custom video:", error);
+//     res
+//       .status(500)
+//       .json({ message: "Internal server error", error: error.message });
+//   }
+// };
+
+// Update a custom video — SAFE, NO BREAKS
 export const updateCustomNewVideo = async (req, res) => {
   try {
-    // Destructure the S3 keys from the request body
-    const { videoKey, thumbnailKey, gifKey, teaserKey } = req.body;
+    const { videoKey, thumbnailKey, gifKey, teaserKey, captionKey } = req.body;
 
-    console.log("🎥 Received S3 keys:");
+    console.log("Received S3 keys:");
     console.log("Video:", videoKey);
-    if (thumbnailKey) console.log("Thumbnail:", thumbnailKey); // NEW: Only log if provided
+    if (thumbnailKey) console.log("Thumbnail:", thumbnailKey);
     if (gifKey) console.log("GIF:", gifKey);
     if (teaserKey) console.log("Teaser:", teaserKey);
+    if (captionKey) console.log("Caption:", captionKey);
 
-    // Validate input
     if (!videoKey) {
       return res.status(400).json({ message: "videoKey is required" });
     }
 
-    // NEW: Build update fields only for provided keys (partial update, no overwriting to "")
+    // Build update — only include keys that are sent
     const updateFields = {};
+
     if (thumbnailKey !== undefined) updateFields.thumbnailKey = thumbnailKey;
     if (gifKey !== undefined) updateFields.gifKey = gifKey;
     if (teaserKey !== undefined) updateFields.teaserKey = teaserKey;
+    if (captionKey !== undefined) {
+      updateFields.captionKey = captionKey;
+      updateFields.hasCaption = true; // Only set to true if captionKey exists
+    }
 
-    // Find and update video document (no eventProcessed here yet)
+    // DO NOT TOUCH hasCaption if captionKey is not sent
+
     const video = await videoModel.findOneAndUpdate(
       { videoKey },
       updateFields,
-      { new: true } // ensures the updated doc is returned
+      { new: true }
     );
 
-    // Handle not found case
     if (!video) {
       return res.status(404).json({ message: "Video not found" });
     }
 
-    // NEW: After update, check if all keys are now set, then set eventProcessed
+    // eventProcessed: only if ALL 3 preview keys exist
     if (video.thumbnailKey && video.gifKey && video.teaserKey) {
       video.eventProcessed = true;
       await video.save();
-      console.log("✅ All keys present; set eventProcessed to true");
+      console.log("All preview assets ready → eventProcessed = true");
     } else {
-      console.log("ℹ️ Partial update; eventProcessed remains false");
+      console.log("Partial update → eventProcessed remains false");
     }
 
-    // Return updated document
+    console.log("Final hasCaption:", video.hasCaption);
+    console.log("Final eventProcessed:", video.eventProcessed);
+
     return res.status(200).json({
       message: "Video updated successfully",
       video,
     });
   } catch (error) {
-    console.error("❌ Error updating custom video:", error);
+    console.error("Error updating custom video:", error);
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
