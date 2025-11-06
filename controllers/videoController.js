@@ -575,3 +575,26 @@ export const updateCustomNewVideo = async (req, res) => {
       .json({ message: "Internal server error", error: error.message });
   }
 };
+
+// get a video by id
+export const getFreshVideoById = async (req, res) => {
+  try {
+    const { videoKey } = req.query;
+    console.log("🔍 Backend searching for video with videoKey:", videoKey);
+
+    const video = await videoModel.findOne({ videoKey });
+
+    if (!video) {
+      return res.status(400).send({
+        message: "Video not found",
+      });
+    }
+
+    res.status(200).send({
+      message: "Video retrieved successfully",
+      video,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};

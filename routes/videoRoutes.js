@@ -9,6 +9,7 @@ import {
   getPresignedUrl,
   saveCustomNewVideo,
   updateCustomNewVideo,
+  getFreshVideoById,
 } from "../controllers/videoController.js";
 
 //middlewares
@@ -47,3 +48,6 @@ videoRoutes.post("/getSignedUrl", getPresignedUrl);
 videoRoutes.post("/saveCustomNewVideo", authenticateToken, saveCustomNewVideo);
 
 videoRoutes.post("/updateCustomNewVideo", updateCustomNewVideo);
+
+//get fresh video data by id
+videoRoutes.get("/getFreshVideoById", authenticateToken, getFreshVideoById);
