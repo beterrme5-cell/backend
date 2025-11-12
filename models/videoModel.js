@@ -20,6 +20,13 @@ const videoSchema = new Schema(
     duration: {
       type: String,
     },
+    size: {
+      type: Number, // size in MB
+    },
+    movFileUrl: {
+      type: String,
+      default: "",
+    },
     teaserKey: {
       type: String,
     },

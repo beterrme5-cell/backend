@@ -418,7 +418,7 @@ export const getPresignedUrl = async (req, res) => {
 // Save a new custom video
 export const saveCustomNewVideo = async (req, res) => {
   try {
-    const { title, key, duration } = req.body;
+    const { title, key, duration, size } = req.body;
 
     const user = req.user;
 
@@ -440,6 +440,7 @@ export const saveCustomNewVideo = async (req, res) => {
       title,
       videoKey: key,
       duration: duration,
+      size: size,
       description: "",
       thumbnailKey: "", // empty for now
       teaserKey: "", // empty for now
