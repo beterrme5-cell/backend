@@ -10,11 +10,14 @@ import {
   saveCustomNewVideo,
   updateCustomNewVideo,
   getFreshVideoById,
+  getVideoViewer,
+  incrementVideoView,
 } from "../controllers/videoController.js";
 
 //middlewares
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 import { verifyAccessToken } from "../middlewares/refreshAccessToken.js";
+import { getVideoViewerData } from "../../frontend/src/api/libraryAPIs.js";
 
 export const videoRoutes = Router();
 
@@ -51,3 +54,9 @@ videoRoutes.post("/updateCustomNewVideo", updateCustomNewVideo);
 
 //get fresh video data by id
 videoRoutes.get("/getFreshVideoById", authenticateToken, getFreshVideoById);
+
+// Existing route
+videoRoutes.get("/getVideoViewerData", getVideoViewer);
+
+// ✅ ADD THIS NEW ROUTE
+videoRoutes.post("/incrementView", incrementVideoView);

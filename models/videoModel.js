@@ -17,6 +17,10 @@ const videoSchema = new Schema(
     videoKey: {
       type: String,
     },
+    viewCount: {
+      type: Number,
+      default: 0,
+    },
     duration: {
       type: String,
     },

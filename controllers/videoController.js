@@ -223,6 +223,56 @@ export const getVideoById = async (req, res) => {
   }
 };
 
+//get video viewer data
+
+// ✅ FIX: Get video viewer data (you had req.params instead of req.query)
+export const getVideoViewer = async (req, res) => {
+  try {
+    const { id } = req.query; // ✅ Changed from req.params to req.query
+
+    const video = await videoModel.findById(id); // ✅ Use dynamic id instead of hardcoded
+
+    if (!video) {
+      return res.status(400).send({
+        message: "Video not found",
+      });
+    }
+
+    res.status(200).send({
+      message: "Video retrieved successfully",
+      video,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// ✅ NEW: Increment video view count
+export const incrementVideoView = async (req, res) => {
+  try {
+    const { videoId } = req.body;
+
+    const video = await videoModel.findById(videoId);
+
+    if (!video) {
+      return res.status(404).send({
+        message: "Video not found",
+      });
+    }
+
+    // Increment view count
+    video.viewCount = (video.viewCount || 0) + 1;
+    await video.save();
+
+    res.status(200).send({
+      message: "View count incremented successfully",
+      viewCount: video.viewCount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 //get all videos
 export const getAllVideos = async (req, res) => {
   try {
