@@ -487,7 +487,7 @@ export const saveCustomNewVideo = async (req, res) => {
     // Save the video after fetching the thumbnail
     const video = await videoModel.create({
       creator: userData._id,
-      title,
+      title: title,
       videoKey: key,
       duration: duration,
       size: size,
@@ -565,33 +565,98 @@ export const saveCustomNewVideo = async (req, res) => {
 // };
 
 // Update a custom video — SAFE, NO BREAKS
+// export const updateCustomNewVideo = async (req, res) => {
+//   try {
+//     const { videoKey, thumbnailKey, gifKey, teaserKey, captionKey } = req.body;
+
+//     console.log("Received S3 keys:");
+//     console.log("Video:", videoKey);
+//     if (thumbnailKey) console.log("Thumbnail:", thumbnailKey);
+//     if (gifKey) console.log("GIF:", gifKey);
+//     if (teaserKey) console.log("Teaser:", teaserKey);
+//     if (captionKey) console.log("Caption:", captionKey);
+
+//     if (!videoKey) {
+//       return res.status(400).json({ message: "videoKey is required" });
+//     }
+
+//     // Build update — only include keys that are sent
+//     const updateFields = {};
+
+//     if (thumbnailKey !== undefined) updateFields.thumbnailKey = thumbnailKey;
+//     if (gifKey !== undefined) updateFields.gifKey = gifKey;
+//     if (teaserKey !== undefined) updateFields.teaserKey = teaserKey;
+//     if (captionKey !== undefined) {
+//       updateFields.captionKey = captionKey;
+//       updateFields.hasCaption = true; // Only set to true if captionKey exists
+//     }
+
+//     // DO NOT TOUCH hasCaption if captionKey is not sent
+
+//     const video = await videoModel.findOneAndUpdate(
+//       { videoKey },
+//       updateFields,
+//       { new: true }
+//     );
+
+//     if (!video) {
+//       return res.status(404).json({ message: "Video not found" });
+//     }
+
+//     // eventProcessed: only if ALL 3 preview keys exist
+//     if (video.thumbnailKey && video.gifKey && video.teaserKey) {
+//       video.eventProcessed = true;
+//       await video.save();
+//       console.log("All preview assets ready → eventProcessed = true");
+//     } else {
+//       console.log("Partial update → eventProcessed remains false");
+//     }
+
+//     console.log("Final hasCaption:", video.hasCaption);
+//     console.log("Final eventProcessed:", video.eventProcessed);
+
+//     return res.status(200).json({
+//       message: "Video updated successfully",
+//       video,
+//     });
+//   } catch (error) {
+//     console.error("Error updating custom video:", error);
+//     res
+//       .status(500)
+//       .json({ message: "Internal server error", error: error.message });
+//   }
+// };
 export const updateCustomNewVideo = async (req, res) => {
+  console.log("🟢 ENTERING updateCustomNewVideo CONTROLLER");
+
   try {
     const { videoKey, thumbnailKey, gifKey, teaserKey, captionKey } = req.body;
-
-    console.log("Received S3 keys:");
-    console.log("Video:", videoKey);
-    if (thumbnailKey) console.log("Thumbnail:", thumbnailKey);
-    if (gifKey) console.log("GIF:", gifKey);
-    if (teaserKey) console.log("Teaser:", teaserKey);
-    if (captionKey) console.log("Caption:", captionKey);
+    console.log("📦 Request body received");
 
     if (!videoKey) {
+      console.log("❌ Missing videoKey");
       return res.status(400).json({ message: "videoKey is required" });
     }
 
-    // Build update — only include keys that are sent
-    const updateFields = {};
+    console.log("🔍 Looking for video with key:", videoKey);
 
+    // Build update fields
+    const updateFields = {};
     if (thumbnailKey !== undefined) updateFields.thumbnailKey = thumbnailKey;
     if (gifKey !== undefined) updateFields.gifKey = gifKey;
     if (teaserKey !== undefined) updateFields.teaserKey = teaserKey;
     if (captionKey !== undefined) {
       updateFields.captionKey = captionKey;
-      updateFields.hasCaption = true; // Only set to true if captionKey exists
+      updateFields.hasCaption = true;
     }
 
-    // DO NOT TOUCH hasCaption if captionKey is not sent
+    console.log("📝 Update fields:", updateFields);
+
+    // Check if videoModel exists
+    if (!videoModel) {
+      console.log("❌ videoModel is undefined!");
+      return res.status(500).json({ message: "Database model not available" });
+    }
 
     const video = await videoModel.findOneAndUpdate(
       { videoKey },
@@ -599,31 +664,48 @@ export const updateCustomNewVideo = async (req, res) => {
       { new: true }
     );
 
+    console.log("🎯 Database query completed, video found:", !!video);
+
     if (!video) {
+      console.log("❌ Video not found with key:", videoKey);
       return res.status(404).json({ message: "Video not found" });
     }
 
-    // eventProcessed: only if ALL 3 preview keys exist
+    // Update eventProcessed
     if (video.thumbnailKey && video.gifKey && video.teaserKey) {
       video.eventProcessed = true;
       await video.save();
-      console.log("All preview assets ready → eventProcessed = true");
-    } else {
-      console.log("Partial update → eventProcessed remains false");
+      console.log("✅ All assets ready → eventProcessed = true");
     }
 
-    console.log("Final hasCaption:", video.hasCaption);
-    console.log("Final eventProcessed:", video.eventProcessed);
+    console.log("✅ Final video state:", {
+      hasCaption: video.hasCaption,
+      eventProcessed: video.eventProcessed,
+    });
 
     return res.status(200).json({
       message: "Video updated successfully",
-      video,
+      video: {
+        id: video._id,
+        videoKey: video.videoKey,
+        thumbnailKey: video.thumbnailKey,
+        gifKey: video.gifKey,
+        teaserKey: video.teaserKey,
+        captionKey: video.captionKey,
+        hasCaption: video.hasCaption,
+        eventProcessed: video.eventProcessed,
+      },
     });
   } catch (error) {
-    console.error("Error updating custom video:", error);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    console.error("💥 ERROR in updateCustomNewVideo:", error);
+    console.error("💥 Error stack:", error.stack);
+
+    // ALWAYS return JSON, never HTML
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
   }
 };
 
