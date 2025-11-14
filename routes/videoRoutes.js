@@ -17,7 +17,6 @@ import {
 //middlewares
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 import { verifyAccessToken } from "../middlewares/refreshAccessToken.js";
-import { getVideoViewerData } from "../../frontend/src/api/libraryAPIs.js";
 
 export const videoRoutes = Router();
 
