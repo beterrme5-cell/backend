@@ -32,16 +32,27 @@ export const sendSMSController = async (req, res) => {
     let videoExistsInternally = true;
     let video;
 
+    console.log("Send Attachment:", sendAttachment);
+
     if (!contactIds || contactIds.length === 0) {
       return res.status(400).send({
         message: "Please provide at least one contact",
       });
     }
+    if (videoKey) {
+      // New schema - find video by videoKey
+      const tempVideo = await videoModel.findOne({ videoKey: videoKey });
 
-    if (!message) {
-      return res.status(400).send({
-        message: "Message is required",
-      });
+      if (!tempVideo) {
+        return res.status(400).send({ message: "Video not found" });
+      }
+
+      // Only check message if video size > 3MB
+      if (tempVideo.size > 3 && (!message || message.trim() === "")) {
+        return res.status(400).send({
+          message: "Message is required for videos larger than 3MB",
+        });
+      }
     }
 
     if (typeof sendAttachment !== "boolean") {
@@ -86,7 +97,7 @@ export const sendSMSController = async (req, res) => {
     // NEW: Check video size and convert if needed
     let videoAttachmentUrl = null;
 
-    if (sendAttachment && videoExistsInternally && video.size < 3) {
+    if (sendAttachment && videoExistsInternally && video.size <= 3) {
       // Check if movFileUrl already exists
       if (video.movFileUrl) {
         // Use existing MOV URL
@@ -145,13 +156,13 @@ export const sendSMSController = async (req, res) => {
 
             // UPDATED: Handle attachments based on size and schema
             if (sendAttachment && videoExistsInternally) {
-              if (video.size < 3 && videoAttachmentUrl) {
+              if (video.size <= 3 && videoAttachmentUrl) {
                 // Send converted MOV file (small video)
                 payload.attachments = [videoAttachmentUrl];
                 console.log("Sending MOV video attachment (size < 3MB)");
               } else {
                 // Send thumbnail only if NOT using new schema OR video size is less than 3MB
-                if (!videoKey || video.size < 3) {
+                if (!videoKey || video.size <= 3) {
                   const thumbnailUrl = videoKey
                     ? `https://d27zhkbo74exx9.cloudfront.net/${video.gifKey}`
                     : video.thumbnailURL;
@@ -167,6 +178,7 @@ export const sendSMSController = async (req, res) => {
                 }
               }
             }
+            console.log("Payload:---------------------->", payload);
 
             const response = await axios.post(
               "https://services.leadconnectorhq.com/conversations/messages",
