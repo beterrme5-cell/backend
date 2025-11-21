@@ -2,9 +2,14 @@ import axios from "axios";
 import videoModel from "../models/videoModel.js";
 import userModel from "../models/userModel.js";
 import { fetchThumbnailURL } from "../services/fetchThumbnailURL.js";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
+import { v2 as cloudinary } from "cloudinary";
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -16,6 +21,13 @@ const s3 = new S3Client({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID, // Store in .env
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
+});
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // Save a new video
@@ -112,6 +124,7 @@ export const deleteVideo = async (req, res) => {
       companyId: user.companyId,
       userLocationId: user.userLocationId,
     });
+
     if (!userData) {
       return res.status(400).send({
         message: "User not found",
@@ -119,11 +132,29 @@ export const deleteVideo = async (req, res) => {
     }
 
     const videoData = await videoModel.findById(videoId);
+    if (!videoData) {
+      return res.status(400).send({
+        message: "Video not found",
+      });
+    }
+
     if (videoData.creator.toString() !== userData._id.toString()) {
       return res.status(400).send({
         message: "You are not authorized to delete this video",
       });
     }
+
+    // Store asset keys before deleting the video document
+    const assetsToDelete = {
+      videoKey: videoData.videoKey,
+      teaserKey: videoData.teaserKey,
+      thumbnailKey: videoData.thumbnailKey,
+      gifKey: videoData.gifKey,
+      captionKey: videoData.captionKey,
+      movFileUrl: videoData.movFileUrl,
+    };
+
+    // Delete the video document first
     const video = await videoModel.findByIdAndDelete(videoId);
 
     if (!video) {
@@ -132,75 +163,90 @@ export const deleteVideo = async (req, res) => {
       });
     }
 
+    // Delete all associated assets
+    await deleteAllVideoAssets(assetsToDelete);
+
     return res.status(200).send({
-      message: "Video deleted successfully",
+      message: "Video and all associated assets deleted successfully",
     });
   } catch (error) {
+    console.error("Error in deleteVideo:", error);
     res.status(400).json({ message: error.message });
   }
 };
 
-// get all videos by account id
-// export const getVideosByAccountId = async (req, res) => {
-//   try {
-//     const user = req.user;
+// helper function to delete video assets as well
 
-//     const userData = await userModel.findOne({
-//       accountId: user.accountId,
-//       companyId: user.companyId,
-//       userLocationId: user.userLocationId,
-//     });
-//     if (!userData) {
-//       return res.status(400).send({
-//         message: "User not found",
-//       });
-//     }
-//     const recordedVideos = await videoModel.find({ creator: userData._id });
+// Helper function to delete from S3
+const deleteFromS3 = async (key) => {
+  if (!key) return;
 
-//     const options = {
-//       method: "GET",
-//       url: "https://services.leadconnectorhq.com/medias/files",
-//       params: {
-//         sortBy: "createdAt",
-//         sortOrder: "asc",
-//         altType: "location",
-//         type: "file",
-//         altId: userData.userLocationId,
-//       },
-//       headers: {
-//         Authorization: `Bearer ${userData.accessToken}`,
-//         Version: "2021-07-28",
-//         Accept: "application/json",
-//       },
-//     };
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Key: key,
+    });
+    await s3.send(command);
+    console.log(`Successfully deleted from S3: ${key}`);
+  } catch (error) {
+    console.error(`Error deleting from S3 (${key}):`, error);
+    // Don't throw error, continue with other deletions
+  }
+};
 
-//     const { data } = await axios.request(options);
-//     let uploadedVideos = [];
+// Helper function to delete from Cloudinary
+const deleteFromCloudinary = async (url) => {
+  if (!url) return;
 
-//     if (data && data.files) {
-//       uploadedVideos = data.files
-//         .filter((file) => file.contentType.startsWith("video"))
-//         .map((file) => ({
-//           title: file.name,
-//           description: "",
-//           embeddedLink: file.url,
-//           shareableLink: file.url,
-//           thumbnailURL: "",
-//           createdAt: file.createdAt,
-//           updatedAt: file.updatedAt,
-//         }));
-//     }
+  try {
+    // Extract public_id from Cloudinary URL
+    const urlParts = url.split("/");
+    const fileNameWithExtension = urlParts[urlParts.length - 1];
+    const publicId = `converted_videos/${fileNameWithExtension.split(".")[0]}`;
 
-//     res.status(200).send({
-//       message: "Videos retrieved successfully",
-//       recordedVideos,
-//       uploadedVideos,
-//     });
-//   } catch (error) {
-//     console.error("Error fetching videos:", error);
-//     res.status(400).json({ message: error.message });
-//   }
-// };
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "video",
+    });
+    console.log(`Cloudinary deletion result:`, result);
+  } catch (error) {
+    console.error(`Error deleting from Cloudinary (${url}):`, error);
+    // Don't throw error, continue with other deletions
+  }
+};
+
+// Function to delete all video assets
+const deleteAllVideoAssets = async (assets) => {
+  const deletionPromises = [];
+
+  // Delete from S3 if keys exist
+  if (assets.videoKey) {
+    deletionPromises.push(deleteFromS3(assets.videoKey));
+  }
+
+  if (assets.teaserKey) {
+    deletionPromises.push(deleteFromS3(assets.teaserKey));
+  }
+
+  if (assets.thumbnailKey) {
+    deletionPromises.push(deleteFromS3(assets.thumbnailKey));
+  }
+
+  if (assets.gifKey) {
+    deletionPromises.push(deleteFromS3(assets.gifKey));
+  }
+
+  if (assets.captionKey) {
+    deletionPromises.push(deleteFromS3(assets.captionKey));
+  }
+
+  // Delete from Cloudinary if movFileUrl exists and is not empty
+  if (assets.movFileUrl && assets.movFileUrl.trim() !== "") {
+    deletionPromises.push(deleteFromCloudinary(assets.movFileUrl));
+  }
+
+  // Execute all deletions in parallel
+  await Promise.allSettled(deletionPromises);
+};
 
 // get a video by id
 export const getVideoById = async (req, res) => {
@@ -262,6 +308,8 @@ export const incrementVideoView = async (req, res) => {
 
     // Increment view count
     video.viewCount = (video.viewCount || 0) + 1;
+    //update last viewed at
+    video.lastViewedAt = new Date();
     await video.save();
 
     res.status(200).send({
@@ -286,50 +334,6 @@ export const getAllVideos = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-
-// export const getAllVideos = async (req, res) => {
-//   try {
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 10;
-//     const skip = (page - 1) * limit;
-
-//     // Get ALL videos sorted by newest first (important for pagination)
-//     const allVideos = await videoModel
-//       .find()
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limit);
-
-//     const totalVideos = await videoModel.countDocuments();
-
-//     // Separate into recorded/uploaded (frontend expects this structure)
-//     const recordedVideos = allVideos.filter((v) => !v.uploaded);
-//     const uploadedVideos = allVideos.filter((v) => v.uploaded);
-
-//     res.status(200).send({
-//       message: "Videos retrieved successfully",
-//       recordedVideos,
-//       uploadedVideos,
-//       currentPage: page,
-//       totalPages: Math.ceil(totalVideos / limit),
-//       totalVideos,
-//       pagination: {
-//         recorded: {
-//           currentPage: page,
-//           totalPages: Math.ceil(totalVideos / limit),
-//           totalVideos: totalVideos,
-//         },
-//         uploaded: {
-//           currentPage: page,
-//           totalPages: Math.ceil(totalVideos / limit),
-//           totalVideos: totalVideos,
-//         },
-//       },
-//     });
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
 
 export const getVideosByAccountId = async (req, res) => {
   try {
@@ -507,125 +511,6 @@ export const saveCustomNewVideo = async (req, res) => {
   }
 };
 
-// // Update a custom video
-// export const updateCustomNewVideo = async (req, res) => {
-//   try {
-//     // Destructure the S3 keys from the request body
-//     const { videoKey, thumbnailKey, gifKey, teaserKey } = req.body;
-
-//     console.log("🎥 Received S3 keys:");
-//     console.log("Video:", videoKey);
-//     if (thumbnailKey) console.log("Thumbnail:", thumbnailKey); // NEW: Only log if provided
-//     if (gifKey) console.log("GIF:", gifKey);
-//     if (teaserKey) console.log("Teaser:", teaserKey);
-
-//     // Validate input
-//     if (!videoKey) {
-//       return res.status(400).json({ message: "videoKey is required" });
-//     }
-
-//     // NEW: Build update fields only for provided keys (partial update, no overwriting to "")
-//     const updateFields = {};
-//     if (thumbnailKey !== undefined) updateFields.thumbnailKey = thumbnailKey;
-//     if (gifKey !== undefined) updateFields.gifKey = gifKey;
-//     if (teaserKey !== undefined) updateFields.teaserKey = teaserKey;
-
-//     // Find and update video document (no eventProcessed here yet)
-//     const video = await videoModel.findOneAndUpdate(
-//       { videoKey },
-//       updateFields,
-//       { new: true } // ensures the updated doc is returned
-//     );
-
-//     // Handle not found case
-//     if (!video) {
-//       return res.status(404).json({ message: "Video not found" });
-//     }
-
-//     // NEW: After update, check if all keys are now set, then set eventProcessed
-//     if (video.thumbnailKey && video.gifKey && video.teaserKey) {
-//       video.eventProcessed = true;
-//       await video.save();
-//       console.log("✅ All keys present; set eventProcessed to true");
-//     } else {
-//       console.log("ℹ️ Partial update; eventProcessed remains false");
-//     }
-
-//     // Return updated document
-//     return res.status(200).json({
-//       message: "Video updated successfully",
-//       video,
-//     });
-//   } catch (error) {
-//     console.error("❌ Error updating custom video:", error);
-//     res
-//       .status(500)
-//       .json({ message: "Internal server error", error: error.message });
-//   }
-// };
-
-// Update a custom video — SAFE, NO BREAKS
-// export const updateCustomNewVideo = async (req, res) => {
-//   try {
-//     const { videoKey, thumbnailKey, gifKey, teaserKey, captionKey } = req.body;
-
-//     console.log("Received S3 keys:");
-//     console.log("Video:", videoKey);
-//     if (thumbnailKey) console.log("Thumbnail:", thumbnailKey);
-//     if (gifKey) console.log("GIF:", gifKey);
-//     if (teaserKey) console.log("Teaser:", teaserKey);
-//     if (captionKey) console.log("Caption:", captionKey);
-
-//     if (!videoKey) {
-//       return res.status(400).json({ message: "videoKey is required" });
-//     }
-
-//     // Build update — only include keys that are sent
-//     const updateFields = {};
-
-//     if (thumbnailKey !== undefined) updateFields.thumbnailKey = thumbnailKey;
-//     if (gifKey !== undefined) updateFields.gifKey = gifKey;
-//     if (teaserKey !== undefined) updateFields.teaserKey = teaserKey;
-//     if (captionKey !== undefined) {
-//       updateFields.captionKey = captionKey;
-//       updateFields.hasCaption = true; // Only set to true if captionKey exists
-//     }
-
-//     // DO NOT TOUCH hasCaption if captionKey is not sent
-
-//     const video = await videoModel.findOneAndUpdate(
-//       { videoKey },
-//       updateFields,
-//       { new: true }
-//     );
-
-//     if (!video) {
-//       return res.status(404).json({ message: "Video not found" });
-//     }
-
-//     // eventProcessed: only if ALL 3 preview keys exist
-//     if (video.thumbnailKey && video.gifKey && video.teaserKey) {
-//       video.eventProcessed = true;
-//       await video.save();
-//       console.log("All preview assets ready → eventProcessed = true");
-//     } else {
-//       console.log("Partial update → eventProcessed remains false");
-//     }
-
-//     console.log("Final hasCaption:", video.hasCaption);
-//     console.log("Final eventProcessed:", video.eventProcessed);
-
-//     return res.status(200).json({
-//       message: "Video updated successfully",
-//       video,
-//     });
-//   } catch (error) {
-//     console.error("Error updating custom video:", error);
-//     res
-//       .status(500)
-//       .json({ message: "Internal server error", error: error.message });
-//   }
-// };
 export const updateCustomNewVideo = async (req, res) => {
   console.log("🟢 ENTERING updateCustomNewVideo CONTROLLER");
 

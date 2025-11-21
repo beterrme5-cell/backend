@@ -52,6 +52,16 @@ const videoSchema = new Schema(
       type: Boolean,
       default: false, // means processing not completed yet
     },
+
+    // NEW FIELDS
+    lastViewedAt: {
+      type: Date,
+      default: null,
+    },
+    shareCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
