@@ -53,6 +53,11 @@ const videoSchema = new Schema(
       default: false, // means processing not completed yet
     },
 
+    firstViewedAt: {
+      type: Date,
+      default: null,
+    },
+
     // NEW FIELDS
     lastViewedAt: {
       type: Date,

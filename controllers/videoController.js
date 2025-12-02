@@ -309,6 +309,9 @@ export const incrementVideoView = async (req, res) => {
     // Increment view count
     video.viewCount = (video.viewCount || 0) + 1;
     //update last viewed at
+    if (!video.firstViewedAt) {
+      video.firstViewedAt = new Date();
+    }
     video.lastViewedAt = new Date();
     await video.save();
 
