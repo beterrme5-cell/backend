@@ -293,10 +293,10 @@ export const getVideoViewer = async (req, res) => {
   }
 };
 
-// ✅ NEW: Increment video view count
+// ✅ NEW: Increment video view count and update watch time
 export const incrementVideoView = async (req, res) => {
   try {
-    const { videoId } = req.body;
+    const { videoId, watchTime } = req.body;
 
     const video = await videoModel.findById(videoId);
 
@@ -306,18 +306,35 @@ export const incrementVideoView = async (req, res) => {
       });
     }
 
-    // Increment view count
-    video.viewCount = (video.viewCount || 0) + 1;
-    //update last viewed at
-    if (!video.firstViewedAt) {
-      video.firstViewedAt = new Date();
+    // Update fields based on what's provided
+    const updates = {};
+
+    // If watchTime is provided, add it to total
+    if (watchTime && watchTime > 0) {
+      updates.totalWatchTime = (video.totalWatchTime || 0) + watchTime;
+      updates.lastViewedAt = new Date();
     }
-    video.lastViewedAt = new Date();
-    await video.save();
+
+    // If this is a new view (no watchTime means first 3-second trigger)
+    if (!watchTime) {
+      updates.viewCount = (video.viewCount || 0) + 1;
+      if (!video.firstViewedAt) {
+        updates.firstViewedAt = new Date();
+      }
+      updates.lastViewedAt = new Date();
+    }
+
+    // Apply updates
+    const updatedVideo = await videoModel.findByIdAndUpdate(videoId, updates, {
+      new: true,
+    });
 
     res.status(200).send({
-      message: "View count incremented successfully",
-      viewCount: video.viewCount,
+      message: watchTime
+        ? "Watch time updated successfully"
+        : "View count incremented successfully",
+      viewCount: updatedVideo.viewCount,
+      totalWatchTime: updatedVideo.totalWatchTime,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -617,5 +634,58 @@ export const getFreshVideoById = async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+// NEW: Increment video share count
+export const incrementVideoShare = async (req, res) => {
+  try {
+    const { videoId, shareCount = 1, shareType } = req.body;
+
+    const video = await videoModel.findById(videoId);
+
+    if (!video) {
+      return res.status(404).send({
+        message: "Video not found",
+      });
+    }
+
+    // Update share counts
+    const updates = {
+      shareCount: (video.shareCount || 0) + shareCount,
+    };
+
+    // Update breakdown by type
+    if (shareType && ['email', 'sms', 'copy'].includes(shareType)) {
+      updates[`shareBreakdown.${shareType}`] = (video.shareBreakdown?.[shareType] || 0) + shareCount;
+    }
+
+    const updatedVideo = await videoModel.findByIdAndUpdate(videoId, updates, {
+      new: true,
+    });
+
+    res.status(200).send({
+      message: "Share count updated successfully",
+      shareCount: updatedVideo.shareCount,
+      shareBreakdown: updatedVideo.shareBreakdown,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get videos by creator ID
+export const getVideosByCreator = async (req, res) => {
+  try {
+    const { creatorId } = req.params;
+
+    const videos = await videoModel.find({ creator: creatorId });
+
+    res.status(200).send({
+      message: "Videos retrieved successfully",
+      videos,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

@@ -12,6 +12,8 @@ import {
   getFreshVideoById,
   getVideoViewer,
   incrementVideoView,
+  incrementVideoShare,
+  getVideosByCreator,
 } from "../controllers/videoController.js";
 
 //middlewares
@@ -59,3 +61,9 @@ videoRoutes.get("/getVideoViewerData", getVideoViewer);
 
 // ✅ ADD THIS NEW ROUTE
 videoRoutes.post("/incrementView", incrementVideoView);
+
+// NEW: Add share tracking route
+videoRoutes.post("/incrementShare", incrementVideoShare);
+
+// NEW: Get videos by creator ID
+videoRoutes.get("/getVideosByCreator/:creatorId", getVideosByCreator);

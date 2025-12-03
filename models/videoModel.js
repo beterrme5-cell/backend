@@ -67,6 +67,15 @@ const videoSchema = new Schema(
       type: Number,
       default: 0,
     },
+    shareBreakdown: {
+      email: { type: Number, default: 0 },
+      sms: { type: Number, default: 0 },
+      copy: { type: Number, default: 0 },
+    },
+    totalWatchTime: {
+      type: Number,
+      default: 0, // in seconds
+    },
   },
   { timestamps: true }
 );
